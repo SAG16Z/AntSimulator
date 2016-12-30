@@ -3,7 +3,7 @@ import jade.core.behaviours.CyclicBehaviour;
 
 import static java.lang.Thread.sleep;
 
-public class AntBuilder extends Agent {
+public class Ant extends Agent {
     protected void setup(){
         addBehaviour(new BuilderBehaviour(this));
     }

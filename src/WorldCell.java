@@ -2,10 +2,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Random;
 
-public class WorldTile extends JComponent {
+public class WorldCell extends JComponent {
     private float gradient = 0;
 
-    public WorldTile() {
+    public WorldCell() {
         gradient = new Random().nextFloat() % 1;
     }
 
