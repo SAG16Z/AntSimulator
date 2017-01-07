@@ -1,9 +1,10 @@
+package gui;
+
 import jade.core.Agent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.*;
 
 public class MainFrame extends JFrame{
@@ -14,7 +15,7 @@ public class MainFrame extends JFrame{
 
     public MainFrame(Agent a){
         myAgent = a;
-        setTitle("Ant simulator");
+        setTitle("agents.Ant simulator");
         setSize(810, 810);
         mapPanel = new MapPanel();
         add(mapPanel);
