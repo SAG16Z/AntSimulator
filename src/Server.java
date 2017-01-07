@@ -6,6 +6,7 @@ import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -21,6 +22,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
 import java.util.function.Consumer;
 
 import static java.lang.Thread.sleep;
@@ -29,6 +31,7 @@ public class Server extends Agent {
     static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private WorldCell[][] worldMap;
     private MainFrame gui;
+    private static int ANT_CNT = 5;
 
     protected void setup() {
         // Register server in the yellow pages
@@ -53,8 +56,12 @@ public class Server extends Agent {
                              AgentController ac = null;
                              try {
                                  // spawn ant
-                                 ac = getContainerController().createNewAgent("Ant", Ant.class.getCanonicalName(), null);
-                                 ac.start();
+                                 Object args[] = new Object[1];
+                                 args[0] = gui.mapPanel;
+                                 for(int i = 0; i < ANT_CNT; i++) {
+                                     ac = getContainerController().createNewAgent("Ant"+i, Ant.class.getCanonicalName(), args);
+                                     ac.start();
+                                 }
                              } catch (StaleProxyException e) {
                                  e.printStackTrace();
                              }
@@ -62,6 +69,12 @@ public class Server extends Agent {
                      }
             );
 
+        addBehaviour(new TickerBehaviour(this, 200){
+            @Override
+            public void onTick() {
+                gui.repaint();
+            }
+        });
 
         // add behaviour for NOT_UNDERSTOOD message
         MessageTemplate mtAWNotUnderstood = MessageTemplate.MatchPerformative(ACLMessage.NOT_UNDERSTOOD);
