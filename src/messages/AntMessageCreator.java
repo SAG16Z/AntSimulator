@@ -34,33 +34,25 @@ public class AntMessageCreator {
         DROP = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_DROP);
     }
 
-
-    public String getLOGIN() {
-        return LOGIN;
-    }
-
-    public String getUP() {
-        return UP;
-    }
-
-    public String getDOWN() {
-        return DOWN;
-    }
-
-    public String getLEFT() {
-        return LEFT;
-    }
-
-    public String getRIGHT() {
-        return RIGHT;
-    }
-
-    public String getCOLLECT() {
-        return COLLECT;
-    }
-
-    public String getDROP() {
-        return DROP;
+    public String getMessageForAction(Actions action){
+        switch (action){
+            case ANT_ACTION_LOGIN:
+                return LOGIN;
+            case ANT_ACTION_UP:
+                return UP;
+            case ANT_ACTION_DOWN:
+                return DOWN;
+            case ANT_ACTION_LEFT:
+                return LEFT;
+            case ANT_ACTION_RIGHT:
+                return RIGHT;
+            case ANT_ACTION_COLLECT:
+                return COLLECT;
+            case ANT_ACTION_DROP:
+                return DROP;
+            default:
+                return "";
+        }
     }
 
 }

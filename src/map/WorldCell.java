@@ -23,11 +23,20 @@ public class WorldCell {
     public void paint(Graphics g, Dimension size) {
         int w = size.width;// - insets.left - insets.right;
         int h = size.height;// - insets.top - insets.bottom;
-        if(food > 0) g.setColor(new Color((float)food / MAX_FOOD, 0.0f, 0.0f));
-        else if(ant > 0) g.setColor(new Color(0.0f, 0.0f, 0.0f));
-        else if(type == CellType.START) g.setColor(new Color(0.0f, 0.0f, 1.0f));
-        else g.setColor(Color.getHSBColor(0.5f, 0.5f, gradient));
-        g.fillRect(position.x*w, position.y*h, w, h);
+        if(ant > 0) { // TODO replace with ants hashmap
+            g.setColor(new Color(0.0f, 0.0f, 0.0f)); //TODO get ant color from ants list
+            g.fillRect(position.x*w, position.y*h, w, h);
+        }
+        else{
+            if(type == CellType.START)
+                g.setColor(new Color(0.0f, 0.0f, 1.0f));
+            else
+                g.setColor(Color.getHSBColor(0.5f, 0.5f, gradient));
+            g.fillRect(position.x*w, position.y*h, w, h);
+            
+            g.setColor(new Color(1.0f, 0.0f, 0.0f, (float) food / MAX_FOOD));
+            g.fillRect(position.x * w, position.y * h, w, h);
+        }
 
     }
 

@@ -1,9 +1,6 @@
 package messages;
 
 import enums.Actions;
-import enums.CellType;
-import map.Point;
-import map.WorldCell;
 
 public class PerceptionMessage {
 
@@ -12,9 +9,10 @@ public class PerceptionMessage {
     private String color;
     private int currentFood;
     private int totalFood;
-    private Actions action;
+    private Actions lastAction;
     private CellMessage cell;
     private String replyId;
+
 
 
     // getters and setters ...
@@ -51,12 +49,12 @@ public class PerceptionMessage {
         this.currentFood = currentFood;
     }
 
-    public Actions getAction() {
-        return action;
+    public Actions getLastAction() {
+        return lastAction;
     }
 
-    public void setAction(Actions action) {
-        this.action = action;
+    public void setLastAction(Actions lastAction) {
+        this.lastAction = lastAction;
     }
 
     public String getReplyId() {

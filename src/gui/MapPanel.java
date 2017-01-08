@@ -1,5 +1,6 @@
 package gui;
 
+import enums.Actions;
 import enums.CellType;
 import map.WorldCell;
 import map.Point;
@@ -47,11 +48,9 @@ public class MapPanel extends JPanel {
         super.paint(g);
         int width = getSize().width / CELL_H;
         int height = getSize().height / CELL_V;
-        for (int i = 0; i < worldMap.length; ++i) {
-            for (int j = 0; j < worldMap[i].length; ++j) {
-                worldMap[i][j].paint(g, new Dimension(width, height));
-            }
-        }
+        for (WorldCell[] cellRow : worldMap )
+            for (WorldCell cell : cellRow)
+                cell.paint(g, new Dimension(width, height));
     }
 
     public WorldCell[][] getWorldMap(){
@@ -62,7 +61,61 @@ public class MapPanel extends JPanel {
     public boolean isValidPosition(Point point) {
         return point != null && point.x >= 0 && point.x < CELL_H && point.y >= 0 && point.y < CELL_V;
     }
-    public float getGradient(int x, int y) {return worldMap[x][y].getGradient();}
-    public float getPheromones(int x, int y) {return worldMap[x][y].getPheromones();}
+    public float getGradient(Point position) {return worldMap[position.x][position.y].getGradient();}
+    public float getPheromones(Point position) {return worldMap[position.x][position.y].getPheromones();}
+
+    public Actions getUpGradient(WorldCell cell){
+        float gradient = 0;
+        Actions action = null;
+        if(isValidPosition(cell.getPosition())) {
+            Point adjacent = cell.getPosition().left();
+            if (isValidPosition(adjacent) && getGradient(adjacent) > gradient) {
+                gradient = getGradient(cell.getPosition().left());
+                action = Actions.ANT_ACTION_LEFT;
+            }
+            adjacent = cell.getPosition().right();
+            if (isValidPosition(adjacent) && getGradient(adjacent) > gradient) {
+                gradient = getGradient(cell.getPosition().right());
+                action = Actions.ANT_ACTION_RIGHT;
+            }
+            adjacent = cell.getPosition().down();
+            if (isValidPosition(adjacent) && getGradient(adjacent) > gradient) {
+                gradient = getGradient(cell.getPosition().down());
+                action = Actions.ANT_ACTION_DOWN;
+            }
+            adjacent = cell.getPosition().up();
+            if (isValidPosition(adjacent) && getGradient(adjacent) > gradient) {
+                action = Actions.ANT_ACTION_UP;
+            }
+        }
+        return action;
+    }
+
+    public Actions getDownPheromones(WorldCell cell){
+        float pheromones = 0;
+        Actions action = null;
+        if(isValidPosition(cell.getPosition())) {
+            Point adjacent = cell.getPosition().left();
+            if (isValidPosition(adjacent) && getGradient(adjacent) < pheromones) {
+                pheromones = getPheromones(cell.getPosition().left());
+                action = Actions.ANT_ACTION_LEFT;
+            }
+            adjacent = cell.getPosition().right();
+            if (isValidPosition(adjacent) && getGradient(adjacent) < pheromones) {
+                pheromones = getPheromones(cell.getPosition().right());
+                action = Actions.ANT_ACTION_RIGHT;
+            }
+            adjacent = cell.getPosition().down();
+            if (isValidPosition(adjacent) && getGradient(adjacent) < pheromones) {
+                pheromones = getPheromones(cell.getPosition().down());
+                action = Actions.ANT_ACTION_DOWN;
+            }
+            adjacent = cell.getPosition().up();
+            if (isValidPosition(adjacent) && getGradient(adjacent) < pheromones) {
+                action = Actions.ANT_ACTION_UP;
+            }
+        }
+        return action;
+    }
 }
 

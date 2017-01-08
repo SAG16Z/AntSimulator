@@ -3,7 +3,6 @@ package agents;
 import behaviours.ReceiveMessageBehaviour;
 import enums.Actions;
 import enums.CellType;
-import gui.MapPanel;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
@@ -24,7 +23,6 @@ public class Ant extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Ant.class);
     // The list of known seller agents
     private AID serverAgent;
-    private MapPanel mapPanel; //TODO remove this reference
     private ACLMessage reply = null;
     private AntMessageCreator msgCreator = null;
     private PerceptionMessage currentPerception = null;
@@ -32,8 +30,7 @@ public class Ant extends Agent {
 
     protected void setup(){
         Object args[] = getArguments();
-        mapPanel = (MapPanel)args[0];
-        msgCreator = (AntMessageCreator) args[1];
+        msgCreator = (AntMessageCreator) args[0];
         // Printout a welcome message
         LOG.debug("Hallo! agents.Ant-agent "+getAID().getName()+" is ready.");
 
@@ -110,17 +107,17 @@ public class Ant extends Agent {
             // drop if on start cell
             if (currentPerception.getCell().getType() == CellType.START) {
                 LOG.debug("dropping food at {}", currentPos);
-                sendReply(msgCreator.getDROP());
+                sendReply(msgCreator.getMessageForAction(Actions.ANT_ACTION_DROP));
                 return;
             }
 
             // otherwise, find next direction to start cell
             LOG.debug("searching start cell");
-            //CO2 gradient or pheromones
-            String toNest = nestSearch();
-            if (toNest != null) {
-                LOG.debug("found path to food from {} to {}", currentPos, toNest);
-                sendReply(toNest);
+            // search for increasing gradient
+            Actions toNestMove = currentPerception.getCell().getUpGradient();
+            if (toNestMove != null) {
+                LOG.debug("found path to food from {} to {}", currentPos, toNestMove);
+                sendReply(msgCreator.getMessageForAction(toNestMove));
                 return;
             }
         }
@@ -128,25 +125,24 @@ public class Ant extends Agent {
         // current cell has food
         if (currentPerception.getCell().getFood() > 0) {
             LOG.debug("collecting food at {}", currentPos);
-            sendReply(msgCreator.getCOLLECT());
+            sendReply(msgCreator.getMessageForAction(Actions.ANT_ACTION_COLLECT));
             return;
         }
 
-        // search for increasing pheromones gradient
-        LOG.trace("searching for path to food");
-        String newCell = foodSearch();
-        if (newCell != null) {
-            LOG.debug("found path to food from {} to {}", currentPos, newCell);
-            sendReply(newCell);
+        //CO2 gradient or pheromones
+        Actions downPheromones = currentPerception.getCell().getDownPheromones();
+        if (downPheromones != null) {
+            LOG.debug("found path to food from {} to {}", currentPos, downPheromones);
+            sendReply(msgCreator.getMessageForAction(downPheromones));
             return;
         }
 
         // move randomly
         LOG.trace("Move randomly");
-        String randomCell = randomMove();
-        if (randomCell != null) {
-            LOG.debug("moving randomly from {} to {}", currentPos, randomCell);
-            sendReply(randomCell);
+        Actions randomMove = getRandomAction();
+        if (randomMove != null) {
+            LOG.debug("moving randomly from {} to {}", currentPos, randomMove);
+            sendReply(msgCreator.getMessageForAction(randomMove));
             return;
         }
 
@@ -176,16 +172,16 @@ public class Ant extends Agent {
      * @return
      *      JSON string corresponding to this direction
      */
-    private String getDirectionMsg(int dir) {
+    private Actions getActionFromDir(int dir) {
         switch (dir){
             case -1:
-                return msgCreator.getLEFT();
+                return Actions.ANT_ACTION_LEFT;
             case 1:
-                return msgCreator.getRIGHT();
+                return Actions.ANT_ACTION_RIGHT;
             case -2:
-                return msgCreator.getDOWN();
+                return Actions.ANT_ACTION_DOWN;
             case 2:
-                return msgCreator.getUP();
+                return Actions.ANT_ACTION_UP;
         }
         return null;
     }
@@ -195,64 +191,8 @@ public class Ant extends Agent {
      * @return
      *      JSON format of next random move message
      */
-    private String randomMove(){
-        return getDirectionMsg(getRandomDir());
-    }
-
-    // TODO move this to perception message
-    private String foodSearch() {
-        int dir = getRandomDir();
-        int x = currentPos.x;
-        int y = currentPos.y;
-        float gradient = 0;
-        if(x > 0 && mapPanel.getPheromones(x-1, y) > gradient) {
-            gradient = mapPanel.getPheromones(x-1, y);
-            dir = -1;
-        }
-        if(x < mapPanel.getH()-1 && mapPanel.getPheromones(x+1, y) > gradient) {
-            gradient = mapPanel.getPheromones(x+1, y);
-            dir = 1;
-        }
-        if(y > 0 && mapPanel.getPheromones(x, y-1) > gradient) {
-            gradient = mapPanel.getPheromones(x, y-1);
-            dir = -2;
-        }
-        if(y < mapPanel.getV()-1 && mapPanel.getPheromones(x, y+1) > gradient) {
-            gradient = mapPanel.getPheromones(x, y+1);
-            dir = 2;
-        }
-        if(gradient == 1) {
-            return randomMove();
-        }
-        return getDirectionMsg(dir);
-    }
-
-    // TODO move this to perception message
-    private String nestSearch() {
-        int dir = getRandomDir();
-        int x = currentPos.x;
-        int y = currentPos.y;
-        float gradient = 0;
-        if(x > 0 && mapPanel.getGradient(x-1, y) > gradient) {
-            gradient = mapPanel.getGradient(x-1, y);
-            dir = -1;
-        }
-        if(x < mapPanel.getH()-1 && mapPanel.getGradient(x+1, y) > gradient) {
-            gradient = mapPanel.getGradient(x+1, y);
-            dir = 1;
-        }
-        if(y > 0 && mapPanel.getGradient(x, y-1) > gradient) {
-            gradient = mapPanel.getGradient(x, y-1);
-            dir = -2;
-        }
-        if(y < mapPanel.getV()-1 && mapPanel.getGradient(x, y+1) > gradient) {
-            gradient = mapPanel.getGradient(x, y+1);
-            dir = 2;
-        }
-        if(gradient == 1) {
-            return randomMove();
-        }
-        return getDirectionMsg(dir);
+    private Actions getRandomAction(){
+        return getActionFromDir(getRandomDir());
     }
 
     /**
@@ -328,7 +268,7 @@ public class Ant extends Agent {
         }
 
         if (currentPos.equals(oldPos)) {
-            checkMovementBlocked(perceptionMsg.getAction(), currentPos);
+            checkMovementBlocked(perceptionMsg.getLastAction(), currentPos);
             prepareReply(msg); // proceed as if nothing happened
             return;
         }
@@ -389,7 +329,7 @@ public class Ant extends Agent {
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
         msg.setSender(getAID());
         msg.setLanguage("json");
-        msg.setContent(msgCreator.getLOGIN());
+        msg.setContent(msgCreator.getMessageForAction(Actions.ANT_ACTION_LOGIN));
         msg.addReceiver(receiver);
         send(msg);
     }

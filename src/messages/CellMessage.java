@@ -1,5 +1,6 @@
 package messages;
 
+import enums.Actions;
 import enums.CellType;
 
 public class CellMessage {
@@ -7,6 +8,8 @@ public class CellMessage {
     private int x;
     private int y;
     private CellType type;
+    private Actions upGradient;
+    private Actions downPheromones;
     private int food;
     private int smell;
     private String[] ants;
@@ -33,6 +36,22 @@ public class CellMessage {
 
     public void setType(CellType type) {
         this.type = type;
+    }
+
+    public Actions getUpGradient() {
+        return upGradient;
+    }
+
+    public void setUpGradient(Actions upGradient) {
+        this.upGradient = upGradient;
+    }
+
+    public Actions getDownPheromones() {
+        return downPheromones;
+    }
+
+    public void setDownPheromones(Actions downPheromones) {
+        this.downPheromones = downPheromones;
     }
 
     public int getFood() {

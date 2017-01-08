@@ -37,7 +37,7 @@ import java.util.Random;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 50;
+    private static final int ANT_CNT = 100;
     private MainFrame gui;
     private MapPanel mapPanel;
     private Map<AID, PerceptionMessage> ants = new HashMap<>();
@@ -65,10 +65,9 @@ public class Server extends Agent {
                              AgentController ac;
                              try {
                                  // spawn ants
-                                 Object args[] = new Object[2];
-                                 args[0] = mapPanel; // TODO remove this reference
+                                 Object args[] = new Object[1];
                                  // here we choose and color:
-                                 args[1] = new AntMessageCreator(Color.black);
+                                 args[0] = new AntMessageCreator(Color.black);
                                  for(int i = 0; i < ANT_CNT; i++) {
                                      ac = getContainerController().createNewAgent("agents.Ant"+i, Ant.class.getCanonicalName(), args);
                                      ac.start();
@@ -170,7 +169,7 @@ public class Server extends Agent {
             int y = new Random().nextInt(mapPanel.getV());
             PerceptionMessage pm = new PerceptionMessage();
             // set perception action as current action requested
-            pm.setAction(action);
+            pm.setLastAction(action);
             updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
             // don't create zombies!
             pm.setState("ALIVE");
@@ -189,7 +188,7 @@ public class Server extends Agent {
             reply.addReceiver(msg.getSender());
             PerceptionMessage pm = ants.get(msg.getSender());
             // set perception action as current action requested
-            pm.setAction(action);
+            pm.setLastAction(action);
             Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
 
             // try move ant
@@ -229,7 +228,7 @@ public class Server extends Agent {
             reply.addReceiver(msg.getSender());
             PerceptionMessage pm = ants.get(msg.getSender());
             // set perception action as current action requested
-            pm.setAction(action);
+            pm.setLastAction(action);
             int x = pm.getCell().getX();
             int y = pm.getCell().getY();
             if(mapPanel.getWorldMap()[x][y].getFood() > 0) {
@@ -248,7 +247,7 @@ public class Server extends Agent {
             reply.addReceiver(msg.getSender());
             PerceptionMessage pm = ants.get(msg.getSender());
             // set perception action as current action requested
-            pm.setAction(action);
+            pm.setLastAction(action);
             // TODO handle food drop
             // now ant drops food and it disappears
             pm.setCurrentFood(0);
@@ -275,6 +274,8 @@ public class Server extends Agent {
         cm.setY(y);
         cm.setType(cell.getType());
         cm.setFood(cell.getFood());
+        cm.setUpGradient(mapPanel.getUpGradient(cell));
+        cm.setDownPheromones(mapPanel.getDownPheromones(cell));
         //TODO set smell and ants
         pm.setCell(cm);
     }
