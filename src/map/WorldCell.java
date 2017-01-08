@@ -5,23 +5,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.security.PublicKey;
 import java.util.Random;
 
 public class WorldCell {
     private static final int FOOD_AMOUNT_TO_CONSUME = 1;
     private static final float FOOD_PROB = 0.05f;
     private static final int MAX_FOOD = 10;
+    private static final Logger LOG = LoggerFactory.getLogger(WorldCell.class);
     private Point position;
     private int ant = 0;
     private float gradient = 0;
     private float pheromones = 0;
-    static final Logger LOG = LoggerFactory.getLogger(WorldCell.class);
     private CellType type;
     private int food = 0;
 
+
     public void paint(Graphics g, Dimension size) {
-        //Insets insets = getInsets();
         int w = size.width;// - insets.left - insets.right;
         int h = size.height;// - insets.top - insets.bottom;
         if(food > 0) g.setColor(new Color((float)food / MAX_FOOD, 0.0f, 0.0f));
@@ -32,6 +31,15 @@ public class WorldCell {
 
     }
 
+    /**
+     * Creates new cell and puts random amount of food on it
+     * @param _position
+     *      (x,y) coordinates of this cell
+     * @param _gradient
+     *      gradient value
+     * @param type
+     *      cell type i.e. (START, FREE, BLOCKED)
+     */
     public WorldCell(Point _position, float _gradient, CellType type) {
         this.position = _position;
         this.gradient = _gradient;
@@ -42,6 +50,11 @@ public class WorldCell {
         }
     }
 
+    /**
+     * Returns cell type or null if type not set
+     * @return
+     *      Cell type i.e. (START, FREE, BLOCKED)
+     */
     public CellType getType() {
         if (type == null) {
             LOG.warn("accessing null-type tile at {}", -1);
@@ -49,8 +62,14 @@ public class WorldCell {
         return type;
     }
 
+    /**
+     * Changes ant counter by given number
+     * @param _ant
+     *      Number of ants to add or remove
+     */
     public void setAnt(int _ant) {
         ant += _ant;
+        if(ant < 0) ant = 0;
     }
 
     public Point getPosition() { return position; }
@@ -59,14 +78,11 @@ public class WorldCell {
         return food;
     }
 
-    //public void setFood(int food) {
-    //    this.food = food;
-    //}
-
-    public boolean hasFood() {
-        return food > 0;
-    }
-
+    /**
+     * Decreases amount of food in cell by constant value
+     * @return
+     *      Amount of food consumed
+     */
     public synchronized int consumeFood() {
         int consumed = FOOD_AMOUNT_TO_CONSUME;
         if(this.food <= FOOD_AMOUNT_TO_CONSUME)
@@ -74,12 +90,6 @@ public class WorldCell {
         this.food -= consumed;
         return consumed;
     }
-
-    public boolean isStart() {
-        return type == CellType.START;
-    }
-
-    public boolean isAccessible() { return !(this.type==CellType.BLOCKED); }
 
     public float getPheromones() {
         return pheromones;

@@ -6,9 +6,6 @@ public class AntMessage {
     private String type;
     private Color color;
 
-    // getters and setters ...
-
-
     public String getType() {
         return type;
     }

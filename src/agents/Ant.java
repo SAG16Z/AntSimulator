@@ -14,31 +14,26 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import map.Point;
-import map.WorldCell;
-import messages.CellMessage;
-import messages.MessageUtil;
-import messages.PerceptionMessage;
+import messages.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.rmi.runtime.Log;
 
 import java.util.*;
 
 public class Ant extends Agent {
-    static final Logger LOG = LoggerFactory.getLogger(Ant.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Ant.class);
     // The list of known seller agents
     private AID serverAgent;
-    private MapPanel mapPanel;
+    private MapPanel mapPanel; //TODO remove this reference
     private ACLMessage reply = null;
-    private MessageUtil msgUtil = null;
+    private AntMessageCreator msgCreator = null;
     private PerceptionMessage currentPerception = null;
     private Point currentPos = null;
-
 
     protected void setup(){
         Object args[] = getArguments();
         mapPanel = (MapPanel)args[0];
-        msgUtil = (MessageUtil)args[1];
+        msgCreator = (AntMessageCreator) args[1];
         // Printout a welcome message
         LOG.debug("Hallo! agents.Ant-agent "+getAID().getName()+" is ready.");
 
@@ -87,7 +82,7 @@ public class Ant extends Agent {
                 .not(MessageTemplate.or(mtAWNotUnderstood, MessageTemplate.or(mtAWInform, mtAWRefuse)));
         addBehaviour(new ReceiveMessageBehaviour(mtOther, this::onUnknownMessage));
 
-        addBehaviour(new TickerBehaviour(this, 200){
+        addBehaviour(new TickerBehaviour(this, 20){
             @Override
             public void onTick() {
                 LOG.debug("agents.Ant named {} decides next action", getLocalName());
@@ -115,7 +110,7 @@ public class Ant extends Agent {
             // drop if on start cell
             if (currentPerception.getCell().getType() == CellType.START) {
                 LOG.debug("dropping food at {}", currentPos);
-                sendReply(msgUtil.DROP);
+                sendReply(msgCreator.getDROP());
                 return;
             }
 
@@ -133,7 +128,7 @@ public class Ant extends Agent {
         // current cell has food
         if (currentPerception.getCell().getFood() > 0) {
             LOG.debug("collecting food at {}", currentPos);
-            sendReply(msgUtil.COLLECT);
+            sendReply(msgCreator.getCOLLECT());
             return;
         }
 
@@ -160,30 +155,51 @@ public class Ant extends Agent {
 
     }
 
+    /**
+     * -1 - left
+     *  1 - right
+     * -2 - down
+     *  2 - up
+     * @return
+     *      Random direction
+     */
     private int getRandomDir() {
         int newDir = new Random().nextInt(4) - 2;
         if(newDir == 0) newDir = 2;
         return newDir;
     }
 
+    /**
+     *
+     * @param dir
+     *      Direction in which the ant wants to move
+     * @return
+     *      JSON string corresponding to this direction
+     */
     private String getDirectionMsg(int dir) {
         switch (dir){
             case -1:
-                return msgUtil.LEFT;
+                return msgCreator.getLEFT();
             case 1:
-                return msgUtil.RIGHT;
+                return msgCreator.getRIGHT();
             case -2:
-                return msgUtil.DOWN;
+                return msgCreator.getDOWN();
             case 2:
-                return msgUtil.UP;
+                return msgCreator.getUP();
         }
         return null;
     }
 
+    /**
+     * Generate message for random move
+     * @return
+     *      JSON format of next random move message
+     */
     private String randomMove(){
         return getDirectionMsg(getRandomDir());
     }
 
+    // TODO move this to perception message
     private String foodSearch() {
         int dir = getRandomDir();
         int x = currentPos.x;
@@ -211,6 +227,7 @@ public class Ant extends Agent {
         return getDirectionMsg(dir);
     }
 
+    // TODO move this to perception message
     private String nestSearch() {
         int dir = getRandomDir();
         int x = currentPos.x;
@@ -242,6 +259,7 @@ public class Ant extends Agent {
      * Logs and silently discards messages not caught by any message template.
      *
      * @param msg
+     *          Unhandled type of server message
      */
     private void onUnknownMessage(ACLMessage msg) {
         LOG.warn("received unknown message: {}", msg);
@@ -253,6 +271,7 @@ public class Ant extends Agent {
      * any malformed messages were sent to the game service by this agent.
      *
      * @param msg
+     *          NOT_UNDERSTOOD message from server
      */
     private void onAWNotUnderstood(ACLMessage msg) {
         LOG.error("service returned NOT_UNDERSTOOD: {}", msg);
@@ -263,10 +282,17 @@ public class Ant extends Agent {
      * Process a message with performative "INFORM", i.e. a perception message.
      *
      * @param msg
+     *          INFORM message from server
      */
     private void onAWInform(ACLMessage msg) {
         String content = msg.getContent();
-        currentPerception = msgUtil.getPerception(content);
+        PerceptionMessage perceptionMsg = MessageUtil.getPerception(content);
+        if(perceptionMsg == null) {
+            LOG.error("invalid perception message: {}", msg);
+            doDelete();
+            return;
+        }
+        currentPerception = perceptionMsg;
         CellMessage cm = currentPerception.getCell();
         currentPos = new Point(cm.getX(), cm.getY());
         LOG.debug("entered new cell at {}", currentPos);
@@ -280,17 +306,22 @@ public class Ant extends Agent {
      * cases as well.
      *
      * @param msg
+     *          REFUSE message from server
      */
     private void onAWRefuse(ACLMessage msg) {
         String content = msg.getContent();
-        PerceptionMessage perceptionMsg = msgUtil.getPerception(content);
+        PerceptionMessage perceptionMsg = MessageUtil.getPerception(content);
+        if(perceptionMsg == null) {
+            LOG.error("invalid perception message: {}", msg);
+            doDelete();
+            return;
+        }
         CellMessage cm = currentPerception.getCell();
         Point position = new Point(cm.getX(), cm.getY());
-
         Point oldPos = currentPos;
         currentPos = position;
 
-        if (!"ALIVE".equals(perceptionMsg.getState())) {
+        if ("DEAD".equals(perceptionMsg.getState())) {
             LOG.info("is dead at {}", currentPos);
             doDelete();
             return;
@@ -298,7 +329,7 @@ public class Ant extends Agent {
 
         if (currentPos.equals(oldPos)) {
             checkMovementBlocked(perceptionMsg.getAction(), currentPos);
-            prepareReply(msg);
+            prepareReply(msg); // proceed as if nothing happened
             return;
         }
 
@@ -325,9 +356,10 @@ public class Ant extends Agent {
     }
 
     /**
-     * Prepares a reply to a message form the antworld service.
+     * Prepares a reply to a message form server.
      *
      * @param msg
+     *          Message that was received from server
      */
     private void prepareReply(ACLMessage msg) {
         reply = msg.createReply();
@@ -336,9 +368,10 @@ public class Ant extends Agent {
     }
 
     /**
-     * Sends a reply to the antworld service with the given content.
+     * Sends a reply to server with the given content.
      *
      * @param content
+     *            JSON serialized message
      */
     private void sendReply(String content) {
         reply.setContent(content);
@@ -347,16 +380,16 @@ public class Ant extends Agent {
     }
 
     /**
-     * Sends a login message to the antworld service
+     * Sends a login message to server
      *
      * @param receiver
-     *            the AID of the antworld service
+     *            server AID
      */
     private void sendLogin(AID receiver) {
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
         msg.setSender(getAID());
         msg.setLanguage("json");
-        msg.setContent(msgUtil.LOGIN);
+        msg.setContent(msgCreator.getLOGIN());
         msg.addReceiver(receiver);
         send(msg);
     }

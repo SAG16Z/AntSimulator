@@ -59,6 +59,9 @@ public class MapPanel extends JPanel {
     }
     public int getH() {return CELL_H;}
     public int getV() {return CELL_V;}
+    public boolean isValidPosition(Point point) {
+        return point != null && point.x >= 0 && point.x < CELL_H && point.y >= 0 && point.y < CELL_V;
+    }
     public float getGradient(int x, int y) {return worldMap[x][y].getGradient();}
     public float getPheromones(int x, int y) {return worldMap[x][y].getPheromones();}
 }

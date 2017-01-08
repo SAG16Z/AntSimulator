@@ -24,10 +24,8 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 import map.*;
-import messages.AntMessage;
-import messages.CellMessage;
-import messages.MessageUtil;
-import messages.PerceptionMessage;
+import map.Point;
+import messages.*;
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +36,11 @@ import java.util.Map;
 import java.util.Random;
 
 public class Server extends Agent {
-    static final Logger LOG = LoggerFactory.getLogger(Server.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+    private static final int ANT_CNT = 50;
     private MainFrame gui;
     private MapPanel mapPanel;
-    Map<AID, PerceptionMessage> ants = new HashMap<AID, PerceptionMessage>();
-    private static int ANT_CNT = 50;
+    private Map<AID, PerceptionMessage> ants = new HashMap<>();
 
     protected void setup() {
         // Register server in the yellow pages
@@ -64,12 +62,13 @@ public class Server extends Agent {
 
         addBehaviour(new OneShotBehaviour() {
                          public void action() {
-                             AgentController ac = null;
+                             AgentController ac;
                              try {
                                  // spawn ants
                                  Object args[] = new Object[2];
-                                 args[0] = mapPanel;
-                                 args[1] = new MessageUtil(Color.black);
+                                 args[0] = mapPanel; // TODO remove this reference
+                                 // here we choose and color:
+                                 args[1] = new AntMessageCreator(Color.black);
                                  for(int i = 0; i < ANT_CNT; i++) {
                                      ac = getContainerController().createNewAgent("agents.Ant"+i, Ant.class.getCanonicalName(), args);
                                      ac.start();
@@ -137,13 +136,29 @@ public class Server extends Agent {
 
     }
 
+    /**
+     *
+     * @param msg
+     *      Message of type NOT_UNDERSTOOD
+     */
     private void onAWNotUnderstood(ACLMessage msg) {
         LOG.error("server received NOT_UNDERSTOOD: {}", msg);
     }
 
+    /**
+     * Handles all requests from ants - updates and sends correct
+     * perception messages
+     * @param msg
+     *      Message of type REQUEST
+     */
+    // TODO split into several functions depending on Action type
     private void onAWRequest(ACLMessage msg) {
         String content = msg.getContent();
         AntMessage ant = messages.MessageUtil.getAnt(content);
+        if(ant == null) {
+            LOG.error("invalid ant request message: {}", msg);
+            return;
+        }
         Actions action = Actions.valueOf(ant.getType());
         LOG.debug("server received request: {}", action);
         if(action == Actions.ANT_ACTION_LOGIN) {
@@ -156,7 +171,7 @@ public class Server extends Agent {
             PerceptionMessage pm = new PerceptionMessage();
             // set perception action as current action requested
             pm.setAction(action);
-            updateCellPerceptionMessage(x, y, mapPanel.getWorldMap()[x][y], pm);
+            updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
             // don't create zombies!
             pm.setState("ALIVE");
             pm.setCurrentFood(0);
@@ -175,34 +190,33 @@ public class Server extends Agent {
             PerceptionMessage pm = ants.get(msg.getSender());
             // set perception action as current action requested
             pm.setAction(action);
-
-            int x = pm.getCell().getX();
-            int y = pm.getCell().getY();
+            Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
 
             // try move ant
+            Point newPosition = null;
             if(ant.getType().equals(Actions.ANT_ACTION_DOWN.toString()))
-                y-=1;
+                newPosition = position.down();
             else if(ant.getType().equals(Actions.ANT_ACTION_LEFT.toString()))
-                x-=1;
+                newPosition = position.left();
             else if(ant.getType().equals(Actions.ANT_ACTION_RIGHT.toString()))
-                x+=1;
+                newPosition = position.right();
             else if(ant.getType().equals(Actions.ANT_ACTION_UP.toString()))
-                y+=1;
+                newPosition = position.up();
 
-            if(x < 0 || x >= mapPanel.getH() || y < 0 || y >= mapPanel.getV()){
-                //TODO also send AWREFUSE when there's obstacle on (x,y) or ant
-                // is dead (with DEAD as perception message state)
-                reply.setPerformative(ACLMessage.REFUSE);
-            }
-            else {
-                // at this point ant can perform move
+            if(newPosition != null && mapPanel.isValidPosition(newPosition)){
+                // ant can perform move
                 // remove ant from cell
-                mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()].setAnt(-1);
+                mapPanel.getWorldMap()[position.x][position.y].setAnt(-1);
                 // put ant on new cell
-                WorldCell newcell = mapPanel.getWorldMap()[x][y];
+                WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
                 newcell.setAnt(1);
                 //update perception
-                updateCellPerceptionMessage(x, y, newcell, pm);
+                updateCellPerceptionMessage(newcell, pm);
+            }
+            else {
+                //TODO also send REFUSE when there's obstacle on (x,y) or ant
+                // is dead (with DEAD as perception message state)
+                reply.setPerformative(ACLMessage.REFUSE);
             }
             // send new perception to ant
             reply.setContent(MessageUtil.asJsonPerception(pm));
@@ -235,8 +249,6 @@ public class Server extends Agent {
             PerceptionMessage pm = ants.get(msg.getSender());
             // set perception action as current action requested
             pm.setAction(action);
-            int x = pm.getCell().getX();
-            int y = pm.getCell().getY();
             // TODO handle food drop
             // now ant drops food and it disappears
             pm.setCurrentFood(0);
@@ -248,7 +260,16 @@ public class Server extends Agent {
         gui.repaint();
     }
 
-    private void updateCellPerceptionMessage(int x, int y, WorldCell cell, PerceptionMessage pm){
+    /**
+     * Updates CellMessage part of perception message according to given cell
+     * @param cell
+     *      world cell to get information from
+     * @param pm
+     *      perception message that gets updated
+     */
+    private void updateCellPerceptionMessage(WorldCell cell, PerceptionMessage pm){
+        int x = cell.getPosition().x;
+        int y = cell.getPosition().y;
         CellMessage cm = new CellMessage();
         cm.setX(x);
         cm.setY(y);

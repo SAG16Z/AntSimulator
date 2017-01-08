@@ -11,8 +11,6 @@ public class CellMessage {
     private int smell;
     private String[] ants;
 
-    // getters and setters ...
-
     public int getX() {
         return x;
     }

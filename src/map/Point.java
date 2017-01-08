@@ -13,9 +13,9 @@ public class Point implements Comparable<Point> {
     }
 
     /**
-     * Returns all points adjacent to this one.
      *
      * @return
+     *      all points adjacent to this one.
      */
     public Point[] allAdjacent() {
         return new Point[] { up(), down(), left(), right() };
@@ -27,7 +27,9 @@ public class Point implements Comparable<Point> {
      * Returns null if the given action is not a movement.
      *
      * @param action
+     *      Ant action
      * @return
+     *      Adjacent point
      */
     public Point adjacent(Actions action) {
         switch (action) {
@@ -45,32 +47,32 @@ public class Point implements Comparable<Point> {
     }
 
     /**
-     * Returns the point above this point.
      * @return
+     *      Returns the point above this point.
      */
     public Point up() {
-        return new Point(x, y - 1);
-    }
-
-    /**
-     * Returns the point below this point.
-     * @return
-     */
-    public Point down() {
         return new Point(x, y + 1);
     }
 
     /**
-     * Returns the point to the left of this point.
      * @return
+     *      Returns the point below this point.
+     */
+    public Point down() {
+        return new Point(x, y - 1);
+    }
+
+    /**
+     * @return
+     *      Returns the point to the left of this point.
      */
     public Point left() {
         return new Point(x - 1, y);
     }
 
     /**
-     * Returns the point to the right of this point.
      * @return
+     *      Returns the point to the right of this point.
      */
     public Point right() {
         return new Point(x + 1, y);
@@ -82,18 +84,12 @@ public class Point implements Comparable<Point> {
     }
 
     public boolean equals(Point other) {
-        if (other == null) {
-            return false;
-        }
-        return this.x == other.x && this.y == other.y;
+        return other != null && this.x == other.x && this.y == other.y;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Point)) {
-            return false;
-        }
-        return equals((Point) obj);
+        return obj instanceof Point && equals((Point) obj);
     }
 
     @Override

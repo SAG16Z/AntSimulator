@@ -13,7 +13,7 @@ import java.lang.reflect.Type;
 
 public class MessageUtil {
 
-    static final Logger LOG = LoggerFactory.getLogger(MessageUtil.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MessageUtil.class);
 
     private static class ColorInstanceCreator implements InstanceCreator<Color> {
         public Color createInstance(Type type) {
@@ -24,73 +24,62 @@ public class MessageUtil {
     private static final Gson GSON = new GsonBuilder().registerTypeAdapter(
             Color.class, new ColorInstanceCreator()).create();
 
-    public final String LOGIN, UP, DOWN, LEFT, RIGHT, COLLECT, DROP;
-
     /**
-     * Creates a message utils object which will use the given color for it's
-     * messages.
-     *
-     * @param color
-     */
-    public MessageUtil(Color color) {
-        AntMessage msg = new AntMessage();
-        msg.setColor(color);
-
-        LOGIN = asJsonWithType(msg, Actions.ANT_ACTION_LOGIN);
-        UP = asJsonWithType(msg, Actions.ANT_ACTION_UP);
-        DOWN = asJsonWithType(msg, Actions.ANT_ACTION_DOWN);
-        LEFT = asJsonWithType(msg, Actions.ANT_ACTION_LEFT);
-        RIGHT = asJsonWithType(msg, Actions.ANT_ACTION_RIGHT);
-        COLLECT = asJsonWithType(msg, Actions.ANT_ACTION_COLLECT);
-        DROP = asJsonWithType(msg, Actions.ANT_ACTION_DROP);
-    }
-
-
-    /**
-     * Creates a Json string according to the given messages.AntMessage's color and the
-     * given action.
-     *
+     * Creates a ant message JSON string according to the given message and action type.
      * @param msg
+     *      AntMessage object to serialize
      * @param action
+     *      Type of ant action
      * @return
+     *      JSON string representing message
      */
-    private synchronized static String asJsonWithType(AntMessage msg, Actions action) {
+    public synchronized static String asJsonAntMessage(AntMessage msg, Actions action) {
         msg.setType(action.toString());
         return GSON.toJson(msg, AntMessage.class);
     }
 
+    /**
+     * Creates perception message JSON string according to given message
+     * @param msg
+     *      PerceptionMessage object to serialize
+     * @return
+     *      JSON string representing message
+     */
     public synchronized static String asJsonPerception(PerceptionMessage msg){
         return GSON.toJson(msg, PerceptionMessage.class);
     }
 
     /**
-     * Parses a perception message from a Json string.
+     * Parses a perception message from a JSON string.
      *
      * @param json
+     *      JSON to parse
      * @return
+     *      PerceptionMessage object or null
      */
     public synchronized static PerceptionMessage getPerception(String json) {
         try {
-            PerceptionMessage msg = GSON.fromJson(json, PerceptionMessage.class);
-            return msg;
+            return GSON.fromJson(json, PerceptionMessage.class);
         } catch (JsonParseException e) {
             LOG.error(e.getMessage());
             return null;
         }
     }
     /**
-     * Parses a perception message from a Json string.
+     * Parses an ant message from a JSON string.
      *
      * @param json
+     *      JSON to parse
      * @return
+     *      AntMessage object or null
      */
     public synchronized static AntMessage getAnt(String json) {
         try {
-            AntMessage msg = GSON.fromJson(json, AntMessage.class);
-            return msg;
+            return GSON.fromJson(json, AntMessage.class);
         } catch (JsonParseException e) {
             LOG.error(e.getMessage());
             return null;
         }
     }
 }
+
