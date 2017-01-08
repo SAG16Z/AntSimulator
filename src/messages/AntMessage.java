@@ -1,16 +1,18 @@
 package messages;
 
+import enums.Actions;
+
 import java.awt.*;
 
 public class AntMessage {
-    private String type;
+    private Actions type;
     private Color color;
 
-    public String getType() {
+    public Actions getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(Actions type) {
         this.type = type;
     }
 

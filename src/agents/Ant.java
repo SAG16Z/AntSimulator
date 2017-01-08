@@ -21,7 +21,6 @@ import java.util.*;
 
 public class Ant extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Ant.class);
-    // The list of known seller agents
     private AID serverAgent;
     private ACLMessage reply = null;
     private AntMessageCreator msgCreator = null;
@@ -32,8 +31,7 @@ public class Ant extends Agent {
         Object args[] = getArguments();
         msgCreator = (AntMessageCreator) args[0];
         // Printout a welcome message
-        LOG.debug("Hallo! agents.Ant-agent "+getAID().getName()+" is ready.");
-
+        LOG.debug("{} Hello! agent is ready.", getLocalName());
         DFAgentDescription template = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
         sd.setType("ant-world");
@@ -42,13 +40,13 @@ public class Ant extends Agent {
             // login
             DFAgentDescription[] results = DFService.search(this, template);
             if (results == null || results.length == 0) {
-                LOG.error("server {} not found", template);
+                LOG.error("{} server {} not found", getLocalName(), template);
                 doDelete();
                 return;
             }
             if (results.length > 1) {
-                LOG.warn("more than once instance of server {}:{} found, defaulting to first occurrence", this,
-                        template);
+                LOG.info("{} more than once instance of server {} found, defaulting to first occurrence",
+                        getLocalName(), template);
             }
             serverAgent = results[0].getName();
             LOG.info("Registered on {}", serverAgent);
@@ -57,7 +55,7 @@ public class Ant extends Agent {
         }
 
         sendLogin(serverAgent); // server should send back AWINFORM
-        LOG.info("login message sent: {}", getLocalName());
+        LOG.info("{} login message sent", getLocalName());
 
         // add behaviour for NOT_UNDERSTOOD message from antworld
         MessageTemplate mtAWNotUnderstood = MessageTemplate.and(MessageTemplate.MatchSender(serverAgent),
@@ -74,15 +72,21 @@ public class Ant extends Agent {
                 MessageTemplate.MatchPerformative(ACLMessage.REFUSE));
         addBehaviour(new ReceiveMessageBehaviour(mtAWRefuse, this::onAWRefuse));
 
+        // add behaviour for MTS-error message from antworld
+        MessageTemplate mtFailure = MessageTemplate.MatchPerformative(ACLMessage.FAILURE);
+        addBehaviour(new ReceiveMessageBehaviour(mtFailure, this::onFailure));
+
         // add behaviour for any other message
-        MessageTemplate mtOther = MessageTemplate
-                .not(MessageTemplate.or(mtAWNotUnderstood, MessageTemplate.or(mtAWInform, mtAWRefuse)));
+        MessageTemplate mtOther = MessageTemplate.not(
+                MessageTemplate.or(mtAWNotUnderstood,
+                        MessageTemplate.or(mtAWInform,
+                                MessageTemplate.or(mtAWRefuse, mtFailure))));
         addBehaviour(new ReceiveMessageBehaviour(mtOther, this::onUnknownMessage));
 
         addBehaviour(new TickerBehaviour(this, 20){
             @Override
             public void onTick() {
-                LOG.debug("agents.Ant named {} decides next action", getLocalName());
+                LOG.debug("{} decides next action", getLocalName());
                 decideNextAction();
             }
         });
@@ -106,17 +110,17 @@ public class Ant extends Agent {
 
             // drop if on start cell
             if (currentPerception.getCell().getType() == CellType.START) {
-                LOG.debug("dropping food at {}", currentPos);
+                LOG.debug("{} dropping food at {}", getLocalName(), currentPos);
                 sendReply(msgCreator.getMessageForAction(Actions.ANT_ACTION_DROP));
                 return;
             }
 
             // otherwise, find next direction to start cell
-            LOG.debug("searching start cell");
+            LOG.debug("{} searching start cell", getLocalName());
             // search for increasing gradient
             Actions toNestMove = currentPerception.getCell().getUpGradient();
             if (toNestMove != null) {
-                LOG.debug("found path to food from {} to {}", currentPos, toNestMove);
+                LOG.debug("{} found path to food from {} to {}", new Object[]{getLocalName(), currentPos, toNestMove} );
                 sendReply(msgCreator.getMessageForAction(toNestMove));
                 return;
             }
@@ -124,7 +128,7 @@ public class Ant extends Agent {
 
         // current cell has food
         if (currentPerception.getCell().getFood() > 0) {
-            LOG.debug("collecting food at {}", currentPos);
+            LOG.debug("{} collecting food at {}", getLocalName(), currentPos);
             sendReply(msgCreator.getMessageForAction(Actions.ANT_ACTION_COLLECT));
             return;
         }
@@ -132,21 +136,21 @@ public class Ant extends Agent {
         //CO2 gradient or pheromones
         Actions downPheromones = currentPerception.getCell().getDownPheromones();
         if (downPheromones != null) {
-            LOG.debug("found path to food from {} to {}", currentPos, downPheromones);
+            LOG.debug("{} found path to food from {} to {}", new Object[]{getLocalName(), currentPos, downPheromones} );
             sendReply(msgCreator.getMessageForAction(downPheromones));
             return;
         }
 
         // move randomly
-        LOG.trace("Move randomly");
+        LOG.trace("{} Move randomly", getLocalName());
         Actions randomMove = getRandomAction();
         if (randomMove != null) {
-            LOG.debug("moving randomly from {} to {}", currentPos, randomMove);
+            LOG.debug("{} moving randomly from {} to {}", new Object[]{getLocalName(), currentPos, randomMove} );
             sendReply(msgCreator.getMessageForAction(randomMove));
             return;
         }
 
-        LOG.debug("found no path to anywhere useful");
+        LOG.debug("{} found no path to anywhere useful", getLocalName());
         doDelete();
 
     }
@@ -196,13 +200,13 @@ public class Ant extends Agent {
     }
 
     /**
-     * Logs and silently discards messages not caught by any message template.
-     *
+     * Logs failure and terminates agent.
      * @param msg
-     *          Unhandled type of server message
+     *          Failure message
      */
-    private void onUnknownMessage(ACLMessage msg) {
-        LOG.warn("received unknown message: {}", msg);
+    private void onFailure(ACLMessage msg) {
+        LOG.warn("{} Received failure message {}.", getLocalName(), msg);
+        doDelete();
     }
 
     /**
@@ -214,8 +218,17 @@ public class Ant extends Agent {
      *          NOT_UNDERSTOOD message from server
      */
     private void onAWNotUnderstood(ACLMessage msg) {
-        LOG.error("service returned NOT_UNDERSTOOD: {}", msg);
+        LOG.error("{} service returned NOT_UNDERSTOOD: {}", getLocalName(), msg);
         doDelete();
+    }
+
+    /**
+     * Logs and silently discards messages not caught by any message template.
+     * @param msg
+     *          Unhandled type of server message
+     */
+    private void onUnknownMessage(ACLMessage msg) {
+        LOG.warn("{} received unknown message: {}", getLocalName(), msg);
     }
 
     /**
@@ -228,14 +241,14 @@ public class Ant extends Agent {
         String content = msg.getContent();
         PerceptionMessage perceptionMsg = MessageUtil.getPerception(content);
         if(perceptionMsg == null) {
-            LOG.error("invalid perception message: {}", msg);
+            LOG.error("{} invalid perception message: {}", getLocalName(), msg);
             doDelete();
             return;
         }
         currentPerception = perceptionMsg;
         CellMessage cm = currentPerception.getCell();
         currentPos = new Point(cm.getX(), cm.getY());
-        LOG.debug("entered new cell at {}", currentPos);
+        LOG.debug("{} entered new cell at {}", getLocalName(), currentPos);
         prepareReply(msg);
     }
 
@@ -252,7 +265,7 @@ public class Ant extends Agent {
         String content = msg.getContent();
         PerceptionMessage perceptionMsg = MessageUtil.getPerception(content);
         if(perceptionMsg == null) {
-            LOG.error("invalid perception message: {}", msg);
+            LOG.error("{} invalid perception message: {}", getLocalName(), msg);
             doDelete();
             return;
         }
@@ -262,7 +275,7 @@ public class Ant extends Agent {
         currentPos = position;
 
         if ("DEAD".equals(perceptionMsg.getState())) {
-            LOG.info("is dead at {}", currentPos);
+            LOG.info("{} is dead at {}", getLocalName(), currentPos);
             doDelete();
             return;
         }
@@ -273,7 +286,7 @@ public class Ant extends Agent {
             return;
         }
 
-        LOG.error("unchecked refuse message: {}", msg);
+        LOG.error("{} unchecked refuse message: {}", getLocalName(), msg);
         doDelete();
     }
 
@@ -292,7 +305,7 @@ public class Ant extends Agent {
         if (blockedPos == null) {
             return;
         }
-        LOG.debug("movement blocked on cell at {} : {}", blockedPos, action);
+        LOG.debug("{} movement blocked on cell at {} : {}", new Object[]{getLocalName(), blockedPos, action} );
     }
 
     /**

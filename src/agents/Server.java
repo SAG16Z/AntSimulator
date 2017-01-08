@@ -37,7 +37,7 @@ import java.util.Random;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 100;
+    private static final int ANT_CNT = 200;
     private MainFrame gui;
     private MapPanel mapPanel;
     private Map<AID, PerceptionMessage> ants = new HashMap<>();
@@ -60,6 +60,8 @@ public class Server extends Agent {
         mapPanel = gui.mapPanel;
         gui.setVisible(true);
 
+        // Ant creating behaviour could be moved to separate
+        // main() and called as separate program
         addBehaviour(new OneShotBehaviour() {
                          public void action() {
                              AgentController ac;
@@ -158,105 +160,106 @@ public class Server extends Agent {
             LOG.error("invalid ant request message: {}", msg);
             return;
         }
-        Actions action = Actions.valueOf(ant.getType());
+        Actions action = ant.getType();
         LOG.debug("server received request: {}", action);
+
+        // initialize reply type with not understood
+        int replyType = ACLMessage.NOT_UNDERSTOOD;
+        PerceptionMessage pm;
+
         if(action == Actions.ANT_ACTION_LOGIN) {
-            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-            reply.setSender(getAID());
-            reply.setLanguage("json");
-            reply.addReceiver(msg.getSender());
+            replyType = ACLMessage.INFORM;
+            // create new perception message
+            pm = new PerceptionMessage();
             int x = new Random().nextInt(mapPanel.getH());
             int y = new Random().nextInt(mapPanel.getV());
-            PerceptionMessage pm = new PerceptionMessage();
-            // set perception action as current action requested
-            pm.setLastAction(action);
             updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
             // don't create zombies!
             pm.setState("ALIVE");
             pm.setCurrentFood(0);
             ants.put(msg.getSender(), pm);
-            reply.setContent(MessageUtil.asJsonPerception(pm));
-            send(reply);
         }
-        else if(action == Actions.ANT_ACTION_DOWN ||
-                action == Actions.ANT_ACTION_LEFT ||
-                action == Actions.ANT_ACTION_RIGHT ||
-                action == Actions.ANT_ACTION_UP ) {
-            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-            reply.setSender(getAID());
-            reply.setLanguage("json");
-            reply.addReceiver(msg.getSender());
-            PerceptionMessage pm = ants.get(msg.getSender());
-            // set perception action as current action requested
-            pm.setLastAction(action);
-            Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
+        else{
+            // get perception message from hashmap
+            pm = ants.get(msg.getSender());
 
-            // try move ant
-            Point newPosition = null;
-            if(ant.getType().equals(Actions.ANT_ACTION_DOWN.toString()))
-                newPosition = position.down();
-            else if(ant.getType().equals(Actions.ANT_ACTION_LEFT.toString()))
-                newPosition = position.left();
-            else if(ant.getType().equals(Actions.ANT_ACTION_RIGHT.toString()))
-                newPosition = position.right();
-            else if(ant.getType().equals(Actions.ANT_ACTION_UP.toString()))
-                newPosition = position.up();
+            if(action == Actions.ANT_ACTION_DOWN ||
+                    action == Actions.ANT_ACTION_LEFT ||
+                    action == Actions.ANT_ACTION_RIGHT ||
+                    action == Actions.ANT_ACTION_UP ) {
+                replyType = ACLMessage.INFORM;
+                Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
+                // try move ant
+                Point newPosition = null;
+                if(ant.getType() == Actions.ANT_ACTION_DOWN)
+                    newPosition = position.down();
+                else if(ant.getType() == Actions.ANT_ACTION_LEFT)
+                    newPosition = position.left();
+                else if(ant.getType() == Actions.ANT_ACTION_RIGHT)
+                    newPosition = position.right();
+                else if(ant.getType() == Actions.ANT_ACTION_UP)
+                    newPosition = position.up();
 
-            if(newPosition != null && mapPanel.isValidPosition(newPosition)){
-                // ant can perform move
-                // remove ant from cell
-                mapPanel.getWorldMap()[position.x][position.y].setAnt(-1);
-                // put ant on new cell
-                WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
-                newcell.setAnt(1);
-                //update perception
-                updateCellPerceptionMessage(newcell, pm);
+                if(newPosition != null && mapPanel.isValidPosition(newPosition)){
+                    // ant can perform move
+                    // remove ant from cell
+                    mapPanel.getWorldMap()[position.x][position.y].setAnt(-1);
+                    // put ant on new cell
+                    WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
+                    newcell.setAnt(1);
+                    //update perception
+                    updateCellPerceptionMessage(newcell, pm);
+                }
+                else {
+                    replyType = ACLMessage.REFUSE;
+                    //TODO also send REFUSE when there's obstacle on (x,y) or ant
+                    // is dead (with DEAD as perception message state)
+                }
             }
-            else {
-                //TODO also send REFUSE when there's obstacle on (x,y) or ant
-                // is dead (with DEAD as perception message state)
-                reply.setPerformative(ACLMessage.REFUSE);
-            }
-            // send new perception to ant
-            reply.setContent(MessageUtil.asJsonPerception(pm));
-            send(reply);
-        }
-        else if(action == Actions.ANT_ACTION_COLLECT){
-            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-            reply.setSender(getAID());
-            reply.setLanguage("json");
-            reply.addReceiver(msg.getSender());
-            PerceptionMessage pm = ants.get(msg.getSender());
-            // set perception action as current action requested
-            pm.setLastAction(action);
-            int x = pm.getCell().getX();
-            int y = pm.getCell().getY();
-            if(mapPanel.getWorldMap()[x][y].getFood() > 0) {
-                pm.setCurrentFood(mapPanel.getWorldMap()[x][y].consumeFood());
-                pm.getCell().setFood(mapPanel.getWorldMap()[x][y].getFood());
-            }
-            // send new perception to ant
-            reply.setContent(MessageUtil.asJsonPerception(pm));
-            send(reply);
+            else if(action == Actions.ANT_ACTION_COLLECT){
+                replyType = ACLMessage.INFORM;
+                int x = pm.getCell().getX();
+                int y = pm.getCell().getY();
+                if(mapPanel.getWorldMap()[x][y].getFood() > 0) {
+                    pm.setCurrentFood(mapPanel.getWorldMap()[x][y].consumeFood());
+                    pm.getCell().setFood(mapPanel.getWorldMap()[x][y].getFood());
+                }
 
-        }
-        else if(action == Actions.ANT_ACTION_DROP){
-            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-            reply.setSender(getAID());
-            reply.setLanguage("json");
-            reply.addReceiver(msg.getSender());
-            PerceptionMessage pm = ants.get(msg.getSender());
-            // set perception action as current action requested
-            pm.setLastAction(action);
-            // TODO handle food drop
-            // now ant drops food and it disappears
-            pm.setCurrentFood(0);
-            // send new perception to ant
-            reply.setContent(MessageUtil.asJsonPerception(pm));
-            send(reply);
+            }
+            else if(action == Actions.ANT_ACTION_DROP){
+                replyType = ACLMessage.INFORM;
+                // TODO handle food drop
+                // now ant drops food and it disappears
+                pm.setCurrentFood(0);
 
+            }
         }
+        // set perception action as current action requested
+        pm.setLastAction(action);
+        // build and send reply to ant
+        ACLMessage reply = prepareReply(msg, replyType);
+        reply.setContent(MessageUtil.asJsonPerception(pm));
+        send(reply);
+        // update gui
         gui.repaint();
+    }
+
+    /**
+     * Builds reply message of given ACL type and language JSON,
+     * with current agent as sender and msg sender as receiver.
+     * @param msg
+     *      Message to reply to
+     * @param perf
+     *      ACL type of reply
+     * @return
+     *      Prepared message
+     */
+    private ACLMessage prepareReply(ACLMessage msg, int perf){
+        ACLMessage reply = new ACLMessage(perf);
+        reply.setSender(getAID());
+        reply.setLanguage("json");
+        reply.addReceiver(msg.getSender());
+        return reply;
     }
 
     /**

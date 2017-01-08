@@ -34,7 +34,7 @@ public class MessageUtil {
      *      JSON string representing message
      */
     public synchronized static String asJsonAntMessage(AntMessage msg, Actions action) {
-        msg.setType(action.toString());
+        msg.setType(action);
         return GSON.toJson(msg, AntMessage.class);
     }
 
