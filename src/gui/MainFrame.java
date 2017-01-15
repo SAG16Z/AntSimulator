@@ -1,19 +1,20 @@
-import jade.core.Agent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package gui;
 
+import jade.core.Agent;
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.*;
 
 public class MainFrame extends JFrame{
-    static final Logger LOG = LoggerFactory.getLogger(MainFrame.class);
     private Agent myAgent;
-
     public MapPanel mapPanel;
 
-    public MainFrame(Agent a){
-        myAgent = a;
+    /**
+     * Creates new JFrame
+     * @param agent
+     *      Reference to agent that should be terminated on close
+     */
+    public MainFrame(Agent agent){
+        myAgent = agent;
         setTitle("Ant simulator");
         setSize(810, 810);
         mapPanel = new MapPanel();
