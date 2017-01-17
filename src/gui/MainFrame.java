@@ -1,8 +1,10 @@
 package gui;
 
 import jade.core.Agent;
+
 import javax.swing.*;
-import java.awt.event.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class MainFrame extends JFrame{
     private Agent myAgent;

@@ -23,21 +23,20 @@ import jade.lang.acl.MessageTemplate;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
-import map.*;
 import map.Point;
+import map.WorldCell;
 import messages.*;
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.awt.*;
+import java.awt.Color;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 200;
+    private static final int ANT_CNT = 30;
     private MainFrame gui;
     private MapPanel mapPanel;
     private Map<AID, PerceptionMessage> ants = new HashMap<>();
@@ -156,6 +155,7 @@ public class Server extends Agent {
     private void onAWRequest(ACLMessage msg) {
         String content = msg.getContent();
         AntMessage ant = messages.MessageUtil.getAnt(content);
+
         if(ant == null) {
             LOG.error("invalid ant request message: {}", msg);
             return;
@@ -173,7 +173,7 @@ public class Server extends Agent {
             pm = new PerceptionMessage();
             int x = new Random().nextInt(mapPanel.getH());
             int y = new Random().nextInt(mapPanel.getV());
-            updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
+            updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm, ant.getColor());
             // don't create zombies!
             pm.setState("ALIVE");
             pm.setCurrentFood(0);
@@ -189,6 +189,9 @@ public class Server extends Agent {
                     action == Actions.ANT_ACTION_UP ) {
                 replyType = ACLMessage.INFORM;
                 Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
+                if(ant.isLeavePheromones()){
+                    mapPanel.getWorldMap()[position.x][position.y].addPheromones(ant.getColor());
+                }
                 // try move ant
                 Point newPosition = null;
                 if(ant.getType() == Actions.ANT_ACTION_DOWN)
@@ -208,7 +211,7 @@ public class Server extends Agent {
                     WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
                     newcell.setAnt(1);
                     //update perception
-                    updateCellPerceptionMessage(newcell, pm);
+                    updateCellPerceptionMessage(newcell, pm, ant.getColor());
                 }
                 else {
                     replyType = ACLMessage.REFUSE;
@@ -269,7 +272,7 @@ public class Server extends Agent {
      * @param pm
      *      perception message that gets updated
      */
-    private void updateCellPerceptionMessage(WorldCell cell, PerceptionMessage pm){
+    private void updateCellPerceptionMessage(WorldCell cell, PerceptionMessage pm, Color color){
         int x = cell.getPosition().x;
         int y = cell.getPosition().y;
         CellMessage cm = new CellMessage();
@@ -277,8 +280,8 @@ public class Server extends Agent {
         cm.setY(y);
         cm.setType(cell.getType());
         cm.setFood(cell.getFood());
-        cm.setUpGradient(mapPanel.getUpGradient(cell));
-        cm.setDownPheromones(mapPanel.getDownPheromones(cell));
+        cm.setUpGradient(mapPanel.getUpGradient(cell, color));
+        cm.setDownPheromones(mapPanel.getDownPheromones(cell, color));
         //TODO set smell and ants
         pm.setCell(cm);
     }

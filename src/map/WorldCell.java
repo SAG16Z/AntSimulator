@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.util.Random;
+import java.util.*;
 
 public class WorldCell {
     private static final int FOOD_AMOUNT_TO_CONSUME = 1;
@@ -15,7 +15,7 @@ public class WorldCell {
     private Point position;
     private int ant = 0;
     private float gradient = 0;
-    private float pheromones = 0;
+    private ArrayList<Pheromone> pheromones;
     private CellType type;
     private int food = 0;
 
@@ -33,7 +33,9 @@ public class WorldCell {
             else
                 g.setColor(Color.getHSBColor(0.5f, 0.5f, gradient));
             g.fillRect(position.x*w, position.y*h, w, h);
-            
+            float currentPheromones = getAllPheromones() / 100.f;
+            g.setColor(new Color(0.0f, 1.0f, 0.0f, currentPheromones > 1.0f ? 1.0f : currentPheromones));
+            g.fillRect(position.x * w, position.y * h, w, h);
             g.setColor(new Color(1.0f, 0.0f, 0.0f, (float) food / MAX_FOOD));
             g.fillRect(position.x * w, position.y * h, w, h);
         }
@@ -52,6 +54,7 @@ public class WorldCell {
     public WorldCell(Point _position, float _gradient, CellType type) {
         this.position = _position;
         this.gradient = _gradient;
+        pheromones = new ArrayList<>();
         this.type = type;
         if(this.type != CellType.START){
             float prob = new Random().nextFloat() % 1;
@@ -100,12 +103,38 @@ public class WorldCell {
         return consumed;
     }
 
-    public float getPheromones() {
-        return pheromones;
+    private synchronized void removeVanishedPheromones(){
+        ArrayList<Pheromone> dead = new ArrayList<>();
+        for (Pheromone p : pheromones)
+            if(p.vanished()) dead.add(p);
+        pheromones.removeAll(dead);
     }
 
-    public float getGradient() {
+    public synchronized float getPheromones(Color color) {
+        float value = 0;
+        removeVanishedPheromones();
+        for(Pheromone p : pheromones)
+            if(p.getColor()==color)
+                value += p.getValue();
+        return value;
+    }
+
+    private synchronized float getAllPheromones(){
+        float value = 0;
+        removeVanishedPheromones();
+        for(Pheromone p : pheromones)
+            value += p.getValue();
+        return value;
+    }
+
+    public float getGradient(Color color) {
+        // TODO change gradient to list of gradients for each color (Ant type)
         return gradient;
+    }
+
+    public synchronized void addPheromones(Color color) {
+        removeVanishedPheromones();
+        pheromones.add(new Pheromone(color));
     }
 }
 

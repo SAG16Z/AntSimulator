@@ -2,6 +2,8 @@ package map;
 
 import enums.Actions;
 
+import java.awt.*;
+
 public class Point implements Comparable<Point> {
 
     public final int x;
@@ -107,4 +109,5 @@ public class Point implements Comparable<Point> {
         }
         return 0;
     }
+
 }

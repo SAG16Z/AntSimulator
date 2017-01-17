@@ -7,6 +7,7 @@ import com.google.gson.JsonParseException;
 import enums.Actions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.rmi.runtime.Log;
 
 import java.awt.*;
 import java.lang.reflect.Type;
@@ -33,9 +34,14 @@ public class MessageUtil {
      * @return
      *      JSON string representing message
      */
-    public synchronized static String asJsonAntMessage(AntMessage msg, Actions action) {
+    public synchronized static String asJsonAntMessage(AntMessage msg, Actions action, boolean leavesPheromones) {
         msg.setType(action);
+        msg.setLeavePheromones(leavesPheromones);
         return GSON.toJson(msg, AntMessage.class);
+    }
+
+    public synchronized static String asJsonAntMessage(AntMessage msg, Actions action) {
+        return asJsonAntMessage(msg, action, false);
     }
 
     /**

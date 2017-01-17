@@ -13,11 +13,16 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import map.Point;
-import messages.*;
+import messages.AntMessageCreator;
+import messages.CellMessage;
+import messages.MessageUtil;
+import messages.PerceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class Ant extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Ant.class);
@@ -115,13 +120,12 @@ public class Ant extends Agent {
                 return;
             }
 
-            // otherwise, find next direction to start cell
-            LOG.debug("{} searching start cell", getLocalName());
             // search for increasing gradient
             Actions toNestMove = currentPerception.getCell().getUpGradient();
             if (toNestMove != null) {
-                LOG.debug("{} found path to food from {} to {}", new Object[]{getLocalName(), currentPos, toNestMove} );
-                sendReply(msgCreator.getMessageForAction(toNestMove));
+                LOG.debug("{} found path to nest from {} to {}", new Object[]{getLocalName(), currentPos, toNestMove} );
+                LOG.debug("{} leaves pheromones at {}", new Object[]{getLocalName(), currentPos, toNestMove} );
+                sendReply(msgCreator.getMessageForAction(toNestMove, true));
                 return;
             }
         }
@@ -129,7 +133,7 @@ public class Ant extends Agent {
         // current cell has food
         if (currentPerception.getCell().getFood() > 0) {
             LOG.debug("{} collecting food at {}", getLocalName(), currentPos);
-            sendReply(msgCreator.getMessageForAction(Actions.ANT_ACTION_COLLECT));
+            sendReply(msgCreator.getMessageForAction(Actions.ANT_ACTION_COLLECT, true));
             return;
         }
 
