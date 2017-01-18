@@ -6,7 +6,7 @@ public class PerceptionMessage {
 
     private String name;
     private String state; // DOA
-    private String color;
+    private int color;
     private int currentFood;
     private int totalFood;
     private Actions lastAction;
@@ -33,11 +33,11 @@ public class PerceptionMessage {
         this.state = state;
     }
 
-    public String getColor() {
+    public int getColor() {
         return color;
     }
 
-    public void setColor(String color) {
+    public void setColor(int color) {
         this.color = color;
     }
 

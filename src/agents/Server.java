@@ -7,7 +7,6 @@ import gui.MapPanel;
 import jade.content.lang.Codec;
 import jade.content.lang.sl.SLCodec;
 import jade.content.onto.basic.Action;
-import jade.core.AID;
 import jade.core.Agent;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
@@ -29,17 +28,16 @@ import messages.*;
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.awt.Color;
-import java.util.HashMap;
-import java.util.Map;
+
+import java.awt.*;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 30;
+    private static final int ANT_CNT = 3;
     private MainFrame gui;
     private MapPanel mapPanel;
-    private Map<AID, PerceptionMessage> ants = new HashMap<>();
 
     protected void setup() {
         // Register server in the yellow pages
@@ -56,7 +54,17 @@ public class Server extends Agent {
             fe.printStackTrace();
         }
         gui = new MainFrame(this);
-        mapPanel = gui.mapPanel;
+        mapPanel = new MapPanel();
+        ArrayList<Integer> antColonies = new ArrayList<>();
+        antColonies.add(Color.HSBtoRGB(0.3f, 1.f, 0.5f));
+        antColonies.add(Color.HSBtoRGB(0.6f, 1.f, 0.5f));
+        antColonies.add(Color.HSBtoRGB(0.9f, 1.f, 0.5f));
+
+        for (Integer c: antColonies) {
+            mapPanel.setAntHill(c);
+        }
+
+        gui.add(mapPanel);
         gui.setVisible(true);
 
         // Ant creating behaviour could be moved to separate
@@ -67,11 +75,12 @@ public class Server extends Agent {
                              try {
                                  // spawn ants
                                  Object args[] = new Object[1];
-                                 // here we choose and color:
-                                 args[0] = new AntMessageCreator(Color.black);
-                                 for(int i = 0; i < ANT_CNT; i++) {
-                                     ac = getContainerController().createNewAgent("agents.Ant"+i, Ant.class.getCanonicalName(), args);
-                                     ac.start();
+                                 for (Integer c : antColonies) {
+                                     args[0] = new AntMessageCreator(c);
+                                     for (int i = 0; i < ANT_CNT; i++) {
+                                         ac = getContainerController().createNewAgent("agents.Ant" + i + "_" + c, Ant.class.getCanonicalName(), args);
+                                         ac.start();
+                                     }
                                  }
                              } catch (StaleProxyException e) {
                                  e.printStackTrace();
@@ -168,20 +177,22 @@ public class Server extends Agent {
         PerceptionMessage pm;
 
         if(action == Actions.ANT_ACTION_LOGIN) {
+            LOG.debug("Ant logs in: {}, {}", ant.getColor(), msg.getSender());
             replyType = ACLMessage.INFORM;
             // create new perception message
             pm = new PerceptionMessage();
             int x = new Random().nextInt(mapPanel.getH());
             int y = new Random().nextInt(mapPanel.getV());
-            updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm, ant.getColor());
             // don't create zombies!
             pm.setState("ALIVE");
+            pm.setColor(ant.getColor());
             pm.setCurrentFood(0);
-            ants.put(msg.getSender(), pm);
+            updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
+            mapPanel.putAnts(msg.getSender(), pm);
         }
         else{
             // get perception message from hashmap
-            pm = ants.get(msg.getSender());
+            pm = mapPanel.getAnt(msg.getSender());
 
             if(action == Actions.ANT_ACTION_DOWN ||
                     action == Actions.ANT_ACTION_LEFT ||
@@ -206,12 +217,12 @@ public class Server extends Agent {
                 if(newPosition != null && mapPanel.isValidPosition(newPosition)){
                     // ant can perform move
                     // remove ant from cell
-                    mapPanel.getWorldMap()[position.x][position.y].setAnt(-1);
+                    mapPanel.getWorldMap()[position.x][position.y].removeAnt(pm);
                     // put ant on new cell
                     WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
-                    newcell.setAnt(1);
+                    newcell.setAnt(pm);
                     //update perception
-                    updateCellPerceptionMessage(newcell, pm, ant.getColor());
+                    updateCellPerceptionMessage(newcell, pm);
                 }
                 else {
                     replyType = ACLMessage.REFUSE;
@@ -272,7 +283,7 @@ public class Server extends Agent {
      * @param pm
      *      perception message that gets updated
      */
-    private void updateCellPerceptionMessage(WorldCell cell, PerceptionMessage pm, Color color){
+    private void updateCellPerceptionMessage(WorldCell cell, PerceptionMessage pm){
         int x = cell.getPosition().x;
         int y = cell.getPosition().y;
         CellMessage cm = new CellMessage();
@@ -280,9 +291,8 @@ public class Server extends Agent {
         cm.setY(y);
         cm.setType(cell.getType());
         cm.setFood(cell.getFood());
-        cm.setUpGradient(mapPanel.getUpGradient(cell, color));
-        cm.setDownPheromones(mapPanel.getDownPheromones(cell, color));
-        //TODO set smell and ants
+        cm.setUpGradient(mapPanel.getUpGradient(cell, pm.getColor()));
+        cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
         pm.setCell(cm);
     }
 }

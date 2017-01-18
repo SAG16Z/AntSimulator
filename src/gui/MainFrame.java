@@ -8,7 +8,6 @@ import java.awt.event.WindowEvent;
 
 public class MainFrame extends JFrame{
     private Agent myAgent;
-    public MapPanel mapPanel;
 
     /**
      * Creates new JFrame
@@ -19,8 +18,6 @@ public class MainFrame extends JFrame{
         myAgent = agent;
         setTitle("Ant simulator");
         setSize(810, 810);
-        mapPanel = new MapPanel();
-        add(mapPanel);
 
         // Make the agent terminate when the user closes
         // the GUI using the button on the upper right corner

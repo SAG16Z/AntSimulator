@@ -6,7 +6,7 @@ import java.awt.*;
 
 public class AntMessage {
     private Actions type;
-    private Color color;
+    private int color;
     private boolean leavePheromones = false;
 
     public Actions getType() {
@@ -17,11 +17,11 @@ public class AntMessage {
         this.type = type;
     }
 
-    public Color getColor() {
+    public int getColor() {
         return color;
     }
 
-    public void setColor(Color color) {
+    public void setColor(int color) {
         this.color = color;
     }
 
