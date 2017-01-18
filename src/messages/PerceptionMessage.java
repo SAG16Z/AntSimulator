@@ -8,6 +8,7 @@ public class PerceptionMessage {
     private String state; // DOA
     private String color;
     private int currentFood;
+    private int currentMaterial;
     private int totalFood;
     private Actions lastAction;
     private CellMessage cell;
@@ -49,6 +50,14 @@ public class PerceptionMessage {
         this.currentFood = currentFood;
     }
 
+    public int getCurrentMaterial() {
+        return currentMaterial;
+    }
+
+    public void setCurrentMaterial(int currentMaterial) {
+        this.currentMaterial = currentMaterial;
+    }
+
     public Actions getLastAction() {
         return lastAction;
     }
@@ -80,4 +89,5 @@ public class PerceptionMessage {
     public void setCell(CellMessage cell) {
         this.cell = cell;
     }
+
 }

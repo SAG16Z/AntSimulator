@@ -1,5 +1,6 @@
 package gui;
 
+import agents.AntHill;
 import enums.Actions;
 import enums.CellType;
 import map.WorldCell;
@@ -15,19 +16,23 @@ public class MapPanel extends JPanel {
     private static int CELL_H = 100;
     private static int CELL_V = 100;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
-    private static int ANTHILL_CNT = 1;
+    private static int ANTHILL_CNT = 3;
     private static float MAX_GRADIENT = 100;
+    private Color[] teamCols = {Color.cyan, Color.green, Color.yellow, Color.orange, Color.magenta};
+    private static int INIT_NEST_SIZE = 5;
     private static final Logger LOG = LoggerFactory.getLogger(MapPanel.class);
 
     public MapPanel(){
         Point anthills[] = new Point[ANTHILL_CNT];
         for(int i = 0; i < ANTHILL_CNT; i++) {
-            int x = 2 + new Random().nextInt(CELL_H - 4);
-            int y = 2 + new Random().nextInt(CELL_V- 4);
-            anthills[i] = new Point(x, y);
+            int x = INIT_NEST_SIZE / 2 + new Random().nextInt(CELL_H - INIT_NEST_SIZE - 1);
+            int y = INIT_NEST_SIZE / 2 + new Random().nextInt(CELL_V - INIT_NEST_SIZE - 1);
+            anthills[i] = new Point(x, y, i);
         }
 
         float gradient, max_gradient;
+        float anthillColRGB[] = Color.black.getRGBColorComponents(null);
+        float anthillColHSB[] = Color.RGBtoHSB((int)anthillColRGB[0]*255, (int)anthillColRGB[1]*255, (int)anthillColRGB[2]*255, null);
         for (int x = 0; x < worldMap.length; ++x) {
             for (int y = 0; y < worldMap[x].length; ++y) {
                 max_gradient = 0;
@@ -37,11 +42,15 @@ public class MapPanel extends JPanel {
                         break;
                     else {
                         gradient = MAX_GRADIENT - (float)Math.hypot(x - anthills[i].x, y - anthills[i].y);
-                        if(gradient > max_gradient) max_gradient = gradient;
+                        if(gradient > max_gradient) {
+                            max_gradient = gradient;
+                            anthillColRGB = teamCols[anthills[i].col].getRGBColorComponents(null);
+                            anthillColHSB = Color.RGBtoHSB((int)anthillColRGB[0]*255, (int)anthillColRGB[1]*255, (int)anthillColRGB[2]*255, null);
+                        }
                     }
                 }
-                if(i == ANTHILL_CNT) worldMap[x][y] = new WorldCell(new Point(x, y), max_gradient / MAX_GRADIENT, CellType.FREE);
-                else worldMap[x][y] = new WorldCell(new Point(x, y), 1, CellType.START);
+                if(i == ANTHILL_CNT) worldMap[x][y] = new WorldCell(new Point(x, y), max_gradient / MAX_GRADIENT, CellType.FREE, anthillColHSB);
+                else worldMap[x][y] = new WorldCell(new Point(x, y), 1, CellType.START, anthillColHSB);
             }
         }
     }
@@ -59,8 +68,8 @@ public class MapPanel extends JPanel {
     public WorldCell[][] getWorldMap(){
         return worldMap;
     }
-    public int getH() {return CELL_H;}
-    public int getV() {return CELL_V;}
+    static public int getH() {return CELL_H;}
+    static public int getV() {return CELL_V;}
     public boolean isValidPosition(Point point) {
         return point != null && point.x >= 0 && point.x < CELL_H && point.y >= 0 && point.y < CELL_V;
     }
@@ -129,5 +138,6 @@ public class MapPanel extends JPanel {
         LOG.debug("Server sends downPheromones action to {}", action);
         return action;
     }
+
 }
 

@@ -5,12 +5,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.awt.color.ColorSpace;
 import java.util.*;
 
 public class WorldCell {
     private static final int FOOD_AMOUNT_TO_CONSUME = 1;
-    private static final float FOOD_PROB = 0.05f;
+    private static final int MATERIAL_AMOUNT_TO_CONSUME = 1;
+    private static final float FOOD_PROB = 0.01f;
     private static final int MAX_FOOD = 10;
+    private static final int MAX_MATERIAL = 10;
+    private static final float MATERIAL_PROB = 0.01f;
     private static final Logger LOG = LoggerFactory.getLogger(WorldCell.class);
     private Point position;
     private int ant = 0;
@@ -18,6 +22,8 @@ public class WorldCell {
     private ArrayList<Pheromone> pheromones;
     private CellType type;
     private int food = 0;
+    private int material = 0;
+    private float anthillCol[];
 
 
     public void paint(Graphics g, Dimension size) {
@@ -29,14 +35,17 @@ public class WorldCell {
         }
         else{
             if(type == CellType.START)
-                g.setColor(new Color(0.0f, 0.0f, 1.0f));
+                g.setColor(Color.blue);
             else
-                g.setColor(Color.getHSBColor(0.5f, 0.5f, gradient));
+                g.setColor(Color.getHSBColor(anthillCol[0], anthillCol[1], gradient));
+
             g.fillRect(position.x*w, position.y*h, w, h);
             float currentPheromones = getAllPheromones() / 100.f;
             g.setColor(new Color(0.0f, 1.0f, 0.0f, currentPheromones > 1.0f ? 1.0f : currentPheromones));
             g.fillRect(position.x * w, position.y * h, w, h);
             g.setColor(new Color(1.0f, 0.0f, 0.0f, (float) food / MAX_FOOD));
+            g.fillRect(position.x * w, position.y * h, w, h);
+            g.setColor(new Color(0.0f, 0.0f, 1.0f, (float) material / MAX_MATERIAL));
             g.fillRect(position.x * w, position.y * h, w, h);
         }
 
@@ -51,7 +60,7 @@ public class WorldCell {
      * @param type
      *      cell type i.e. (START, FREE, BLOCKED)
      */
-    public WorldCell(Point _position, float _gradient, CellType type) {
+    public WorldCell(Point _position, float _gradient, CellType type, float anthillCol[]) {
         this.position = _position;
         this.gradient = _gradient;
         pheromones = new ArrayList<>();
@@ -59,7 +68,12 @@ public class WorldCell {
         if(this.type != CellType.START){
             float prob = new Random().nextFloat() % 1;
             if (prob < FOOD_PROB) food = new Random().nextInt(MAX_FOOD);
+            else {
+                prob = new Random().nextFloat() % 1;
+                if (prob < MATERIAL_PROB) material = new Random().nextInt(MAX_MATERIAL);
+            }
         }
+        this.anthillCol = anthillCol;
     }
 
     /**
@@ -90,6 +104,10 @@ public class WorldCell {
         return food;
     }
 
+    public int getMaterial() {
+        return material;
+    }
+
     /**
      * Decreases amount of food in cell by constant value
      * @return
@@ -100,6 +118,14 @@ public class WorldCell {
         if(this.food <= FOOD_AMOUNT_TO_CONSUME)
             consumed = this.food;
         this.food -= consumed;
+        return consumed;
+    }
+
+    public synchronized int consumeMaterial() {
+        int consumed = MATERIAL_AMOUNT_TO_CONSUME;
+        if(this.material <= MATERIAL_AMOUNT_TO_CONSUME)
+            consumed = this.material;
+        this.material -= consumed;
         return consumed;
     }
 
@@ -135,6 +161,15 @@ public class WorldCell {
     public synchronized void addPheromones(Color color) {
         removeVanishedPheromones();
         pheromones.add(new Pheromone(color));
+    }
+
+    public void setAnthill(boolean anthill) {
+        if(anthill) type = CellType.START;
+        else type = CellType.FREE;
+    }
+
+    public boolean isAnthill() {
+        return (type == CellType.START);
     }
 }
 

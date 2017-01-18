@@ -10,7 +10,7 @@ public class AntMessageCreator {
                             DOWN, DOWN_AND_PHEROMONES,
                             LEFT, LEFT_AND_PHEROMONES,
                             RIGHT, RIGHT_AND_PHEROMONES,
-                            COLLECT, DROP;
+                            COLLECT_FOOD, COLLECT_MATERIAL, DROP_FOOD, DROP_MATERIAL;
 
     /**
      * Creates a message creator object which will use the given color for it's
@@ -32,8 +32,10 @@ public class AntMessageCreator {
         LEFT_AND_PHEROMONES = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_LEFT, true);
         RIGHT = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_RIGHT);
         RIGHT_AND_PHEROMONES = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_RIGHT, true);
-        COLLECT = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_COLLECT);
-        DROP = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_DROP);
+        COLLECT_FOOD = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_COLLECT_FOOD);
+        COLLECT_MATERIAL = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_COLLECT_MATERIAL);
+        DROP_FOOD = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_DROP_FOOD);
+        DROP_MATERIAL = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_DROP_MATERIAL);
     }
 
     public String getMessageForAction(Actions action){
@@ -52,10 +54,14 @@ public class AntMessageCreator {
                 return leavesPheromones ? LEFT_AND_PHEROMONES : LEFT;
             case ANT_ACTION_RIGHT:
                 return leavesPheromones ? RIGHT_AND_PHEROMONES : RIGHT;
-            case ANT_ACTION_COLLECT:
-                return COLLECT;
-            case ANT_ACTION_DROP:
-                return DROP;
+            case ANT_ACTION_COLLECT_FOOD:
+                return COLLECT_FOOD;
+            case ANT_ACTION_COLLECT_MATERIAL:
+                return COLLECT_MATERIAL;
+            case ANT_ACTION_DROP_FOOD:
+                return DROP_FOOD;
+            case ANT_ACTION_DROP_MATERIAL:
+                return DROP_MATERIAL;
             default:
                 return "";
         }
