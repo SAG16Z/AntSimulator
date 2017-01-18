@@ -31,16 +31,16 @@ import org.slf4j.LoggerFactory;
 import java.awt.*;
 import java.lang.reflect.Type;
 
-public class Ant2 extends Agent {
-    private static final Logger LOG = LoggerFactory.getLogger(Ant.class);
-    private AID serverAgent;
-    private AID hillAgent;
-    private Point2 position;
-    private Color color;
+public class Ant2 extends AntAgentBase {
+    private static final Logger LOG = LoggerFactory.getLogger(Ant2.class);
+    public AID serverAgent;
+    public AID hillAgent;
 
-    private static final Gson GSON = new Gson();
+    public Point2 position;
+    public Color color;
+    public HillMessage hillInfo;
 
-    private HillMessage hillInfo;
+    private final Gson GSON = new Gson();
 
     /*
     private ACLMessage reply = null;
@@ -66,56 +66,6 @@ public class Ant2 extends Agent {
         workBehaviour(seq);
 
         addBehaviour(seq);
-
-
-
-
-        //sendLogin(serverAgent); // server should send back AWINFORM
-        //LOG.info("{} login message sent", getLocalName());
-        //sendLogin(hillAgent);
-
-        //SequentialBehaviour seq = new SequentialBehaviour();
-        //seq.addSubBehaviour();
-
-        /*
-        MessageTemplate mtAWInform = MessageTemplate.and(MessageTemplate.MatchSender(hillAgent),
-                MessageTemplate.MatchPerformative(ACLMessage.INFORM));
-        addBehaviour(new ReceiveMessageBehaviour(mtAWInform, this::onHillInform));
-        */
-
-        /*
-        // add behaviour for NOT_UNDERSTOOD message from antworld
-        MessageTemplate mtAWNotUnderstood = MessageTemplate.and(MessageTemplate.MatchSender(serverAgent),
-                MessageTemplate.MatchPerformative(ACLMessage.NOT_UNDERSTOOD));
-        addBehaviour(new ReceiveMessageBehaviour(mtAWNotUnderstood, this::onAWNotUnderstood));
-
-        // add behaviour for INFORM message from antworld
-
-
-        // add behaviour for REFUSE message from antworld
-        MessageTemplate mtAWRefuse = MessageTemplate.and(MessageTemplate.MatchSender(serverAgent),
-                MessageTemplate.MatchPerformative(ACLMessage.REFUSE));
-        addBehaviour(new ReceiveMessageBehaviour(mtAWRefuse, this::onAWRefuse));
-
-        // add behaviour for MTS-error message from antworld
-        MessageTemplate mtFailure = MessageTemplate.MatchPerformative(ACLMessage.FAILURE);
-        addBehaviour(new ReceiveMessageBehaviour(mtFailure, this::onFailure));
-
-        // add behaviour for any other message
-        MessageTemplate mtOther = MessageTemplate.not(
-                MessageTemplate.or(mtAWNotUnderstood,
-                        MessageTemplate.or(mtAWInform,
-                                MessageTemplate.or(mtAWRefuse, mtFailure))));
-        addBehaviour(new ReceiveMessageBehaviour(mtOther, this::onUnknownMessage));
-
-        addBehaviour(new TickerBehaviour(this, 20){
-            @Override
-            public void onTick() {
-                //LOG.debug("{} decides next action", getLocalName());
-                //antBehaviour.decideNextAction(Ant.this, reply, currentPerception, getLocalName(), currentPos);
-            }
-        });
-        */
 
         // Printout a welcome message
         LOG.debug("{} Hello! agent is ready.", getLocalName());
@@ -169,13 +119,7 @@ public class Ant2 extends Agent {
         s.addSubBehaviour(new OneShotBehaviour() {
             @Override
             public void action() {
-                ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-                msg.setSender(getAID());
-                msg.setLanguage("json");
-                msg.setContent(GSON.toJson(new ActionMessage(Action.ANT_ACTION_LOGIN), ActionMessage.class));
-                msg.addReceiver(serverAgent);
-                send(msg);
-
+                sendActionMessage(new ActionMessage(Action.ANT_ACTION_LOGIN));
             }
         });
         LOG.info("{} login message sent", getLocalName());
@@ -192,7 +136,8 @@ public class Ant2 extends Agent {
 
                 String content = msg.getContent();
                 LOG.debug("{}", content);
-                position = GSON.fromJson(content, Point2.class);
+                AntMessage2 antmsg = GSON.fromJson(content, AntMessage2.class);
+                position = antmsg.position;
             }
         });
     }
@@ -200,28 +145,23 @@ public class Ant2 extends Agent {
     private void workBehaviour(SequentialBehaviour s) {
         SequentialBehaviour seq = new SequentialBehaviour();
 
-        seq.addSubBehaviour(new OneShotBehaviour() {
+        OneShotBehaviour requestGradients = new OneShotBehaviour() {
             @Override
             public void action() {
-                ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-                msg.setSender(getAID());
-                msg.setLanguage("json");
+                ACLMessage msg = prepareMesage(hillAgent, ACLMessage.REQUEST);
                 msg.setContent(GSON.toJson(position, Point2.class));
-                msg.addReceiver(hillAgent);
                 send(msg);
             }
-        });
+        };
 
-        seq.addSubBehaviour(new AntBehaviour(this));
-
-        WakerBehaviour wak = new WakerBehaviour(this, 1000) {
+        WakerBehaviour delay = new WakerBehaviour(this, 1000) {
             @Override
             protected void onWake() {
                 super.onWake();
             }
         };
 
-        seq.addSubBehaviour(new ReceiveWaitBehaviour(this, 4000, MessageTemplate.and(MessageTemplate.MatchSender(hillAgent),
+        ReceiveWaitBehaviour waitForGradients = new ReceiveWaitBehaviour(this, 4000, MessageTemplate.and(MessageTemplate.MatchSender(hillAgent),
                 MessageTemplate.MatchPerformative(ACLMessage.INFORM))) {
             @Override
             public void handle(ACLMessage msg) {
@@ -234,20 +174,33 @@ public class Ant2 extends Agent {
                 String content = msg.getContent();
                 hillInfo = GSON.fromJson(content, HillMessage.class);
                 LOG.debug("{}", content);
-                wak.reset();
+                delay.reset();
             }
-        });
+        };
 
-        seq.addSubBehaviour(wak);
+        AntBehaviour currentBehaviour = new AntBehaviour(this);
 
-        seq.addSubBehaviour(new OneShotBehaviour() {
+        OneShotBehaviour resetSequence = new OneShotBehaviour() {
             @Override
             public void action() {
                 seq.reset();
             }
-        });
+        };
+
+        seq.addSubBehaviour(requestGradients);
+        seq.addSubBehaviour(waitForGradients);
+        seq.addSubBehaviour(currentBehaviour);
+        seq.addSubBehaviour(delay);
+        seq.addSubBehaviour(resetSequence);
 
         s.addSubBehaviour(seq);
+
+    }
+
+    public void sendActionMessage(ActionMessage a) {
+        ACLMessage msg = prepareMesage(serverAgent, ACLMessage.REQUEST);
+        msg.setContent(GSON.toJson(a, ActionMessage.class));
+        send(msg);
     }
 
 }

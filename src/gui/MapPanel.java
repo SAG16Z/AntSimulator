@@ -4,6 +4,7 @@ import enums.Actions;
 import enums.CellType;
 import jade.core.AID;
 import map.Anthill;
+import map.Point2;
 import map.WorldCell;
 import map.Point;
 import messages.PerceptionMessage;
@@ -69,12 +70,13 @@ public class MapPanel extends JPanel {
     }
     public int getH() {return CELL_H;}
     public int getV() {return CELL_V;}
-    public boolean isValidPosition(Point point) {
+    public boolean isValidPosition(Point2 point) {
         return point != null && point.x >= 0 && point.x < CELL_H && point.y >= 0 && point.y < CELL_V;
     }
     public float getGradient(Point position, int color) {return worldMap[position.x][position.y].getGradient(color);}
     public float getPheromones(Point position, int color) {return worldMap[position.x][position.y].getPheromones(color);}
 
+    /*
     public Actions getUpGradient(WorldCell cell, int color){
         float gradient = 0;
         Actions action = null;
@@ -137,6 +139,7 @@ public class MapPanel extends JPanel {
         LOG.debug("Server sends downPheromones action to {}", action);
         return action;
     }
+    */
 
     public synchronized void putAnts(AID sender, PerceptionMessage pm) {
         ants.put(sender, pm);

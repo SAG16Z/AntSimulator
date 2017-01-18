@@ -3,6 +3,7 @@ package agents;
 import behaviours.ReceiveMessageBehaviour;
 import com.google.gson.Gson;
 import enums.Actions;
+import enums.CellType;
 import gui.MainFrame;
 import gui.MapPanel;
 import jade.content.lang.Codec;
@@ -36,17 +37,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-public class Server2 extends Agent {
+public class Server2 extends AntAgentBase {
 
     public static String NICKNAME = "agents.World";
     public static String WORLD_SERVICE = "ant-world";
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 1;
+    private static final int ANT_CNT = 3;
     private MainFrame gui;
     private MapPanel mapPanel;
     private Map<Color, AID> hills = new HashMap<>();
-    private Map<AID, PerceptionMessage> ants = new HashMap<>();
+    private Map<AID, Point2> ants = new HashMap<>();
 
     protected void setup() {
         // Register server in the yellow pages
@@ -168,7 +169,6 @@ public class Server2 extends Agent {
      * @param msg
      *      Message of type REQUEST
      */
-    // TODO split into several functions depending on Action type
 
     private void onAWRequest(ACLMessage msg) {
         String content = msg.getContent();
@@ -178,16 +178,35 @@ public class Server2 extends Agent {
 
         ActionMessage amsg = g.fromJson(content, ActionMessage.class);
 
+        AntMessage2 antmsg = new AntMessage2();
+
         switch(amsg.action) {
             case ANT_ACTION_LOGIN:
                 Random r = new Random();
-                reply.setContent(g.toJson(new Point2(r.nextInt(mapPanel.getH()), r.nextInt(mapPanel.getV())), Point2.class));
-                send(reply);
+                Point2 p = new Point2(r.nextInt(mapPanel.getH()), r.nextInt(mapPanel.getV()));
+
+                antmsg.position = p;
+                antmsg.cellType = CellType.FREE; //TODO: fetch from map
+                reply.setContent(g.toJson(antmsg, AntMessage2.class));
+
+                ants.put(msg.getSender(), p);
                 break;
             case ANT_ACTION_MOVE:
+                Point2 oldPoint = ants.get(msg.getSender());
+                Point2 newPoint = oldPoint.adjacent(amsg.direction);
+
+                if(newPoint != null && mapPanel.isValidPosition(newPoint)){
+                    ants.put(msg.getSender(), newPoint);
+                    antmsg.position = newPoint;
+                    antmsg.cellType = CellType.FREE; //TODO: Fetch from map
+                } else {
+                    reply.setPerformative(ACLMessage.REFUSE);
+                }
                 break;
         }
-        //gui.repaint();
+        reply.setContent(g.toJson(antmsg, AntMessage2.class));
+        send(reply);
+        gui.repaint();
     }
     /*
     private void onAWRequest(ACLMessage msg) {
@@ -287,24 +306,6 @@ public class Server2 extends Agent {
         gui.repaint();
     }
     */
-
-    /**
-     * Builds reply message of given ACL type and language JSON,
-     * with current agent as sender and msg sender as receiver.
-     * @param msg
-     *      Message to reply to
-     * @param perf
-     *      ACL type of reply
-     * @return
-     *      Prepared message
-     */
-    private ACLMessage prepareReply(ACLMessage msg, int perf){
-        ACLMessage reply = new ACLMessage(perf);
-        reply.setSender(getAID());
-        reply.setLanguage("json");
-        reply.addReceiver(msg.getSender());
-        return reply;
-    }
 
     /**
      * Updates CellMessage part of perception message according to given cell

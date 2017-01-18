@@ -2,11 +2,8 @@ package agents;
 
 import behaviours.ReceiveMessageBehaviour;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.InstanceCreator;
 import enums.Direction;
 import gui.MapPanel;
-import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.Property;
@@ -17,15 +14,13 @@ import jade.lang.acl.MessageTemplate;
 import map.Point;
 import map.Point2;
 import messages.HillMessage;
-import messages.MessageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.lang.reflect.Type;
 import java.util.function.Function;
 
-public class AntHill extends Agent {
+public class AntHill extends AntAgentBase {
 
     public static String NICKNAME = "agents.Hill";
     public static String ANTHILL_SERVICE = "hill-service";
@@ -84,14 +79,6 @@ public class AntHill extends Agent {
             fe.printStackTrace();
         }
         LOG.debug("agents.Hill agent " + getAID().getName() + " terminating.");
-    }
-
-    private ACLMessage prepareReply(ACLMessage msg, int perf){
-        ACLMessage reply = new ACLMessage(perf);
-        reply.setSender(getAID());
-        reply.setLanguage("json");
-        reply.addReceiver(msg.getSender());
-        return reply;
     }
 
     private void onAWRequest(ACLMessage msg) {

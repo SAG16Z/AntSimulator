@@ -187,7 +187,7 @@ public class Server extends Agent {
             pm.setState("ALIVE");
             pm.setColor(ant.getColor());
             pm.setCurrentFood(0);
-            updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
+            //updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
             mapPanel.putAnts(msg.getSender(), pm);
         }
         else{
@@ -214,7 +214,7 @@ public class Server extends Agent {
                 else if(ant.getType() == Actions.ANT_ACTION_UP)
                     newPosition = position.up();
 
-                if(newPosition != null && mapPanel.isValidPosition(newPosition)){
+                //if(newPosition != null && mapPanel.isValidPosition(newPosition)){
                     // ant can perform move
                     // remove ant from cell
                     mapPanel.getWorldMap()[position.x][position.y].removeAnt(pm);
@@ -222,14 +222,15 @@ public class Server extends Agent {
                     WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
                     newcell.setAnt(pm);
                     //update perception
-                    updateCellPerceptionMessage(newcell, pm);
-                }
-                else {
+                    //updateCellPerceptionMessage(newcell, pm);
+                //}
+                //else {
                     replyType = ACLMessage.REFUSE;
                     //TODO also send REFUSE when there's obstacle on (x,y) or ant
                     // is dead (with DEAD as perception message state)
-                }
+               //}
             }
+            /*
             else if(action == Actions.ANT_ACTION_COLLECT){
                 replyType = ACLMessage.INFORM;
                 int x = pm.getCell().getX();
@@ -247,6 +248,7 @@ public class Server extends Agent {
                 pm.setCurrentFood(0);
 
             }
+            */
         }
         // set perception action as current action requested
         pm.setLastAction(action);
@@ -283,6 +285,7 @@ public class Server extends Agent {
      * @param pm
      *      perception message that gets updated
      */
+    /*
     private void updateCellPerceptionMessage(WorldCell cell, PerceptionMessage pm){
         int x = cell.getPosition().x;
         int y = cell.getPosition().y;
@@ -295,5 +298,6 @@ public class Server extends Agent {
         cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
         pm.setCell(cm);
     }
+    */
 }
 

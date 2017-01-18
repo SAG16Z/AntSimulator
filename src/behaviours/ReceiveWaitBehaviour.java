@@ -26,7 +26,6 @@ public class ReceiveWaitBehaviour extends SimpleBehaviour
 
     public ACLMessage getMessage() { return msg; }
 
-
     public ReceiveWaitBehaviour(Agent a, int millis, MessageTemplate mt) {
         super(a);
         timeOut = millis;
