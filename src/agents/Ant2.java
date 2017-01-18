@@ -3,6 +3,7 @@ package agents;
 import antbehaviour.Behaviour;
 import antbehaviour.BehaviourQueen;
 import antbehaviour.BehaviourWorker;
+import behaviours.AntBehaviour;
 import behaviours.ReceiveMessageBehaviour;
 import behaviours.ReceiveWaitBehaviour;
 import com.google.gson.Gson;
@@ -211,6 +212,8 @@ public class Ant2 extends Agent {
             }
         });
 
+        seq.addSubBehaviour(new AntBehaviour(this));
+
         WakerBehaviour wak = new WakerBehaviour(this, 1000) {
             @Override
             protected void onWake() {
@@ -236,13 +239,6 @@ public class Ant2 extends Agent {
         });
 
         seq.addSubBehaviour(wak);
-
-        seq.addSubBehaviour(new OneShotBehaviour() {
-            @Override
-            public void action() {
-                seq.reset();
-            }
-        });
 
         seq.addSubBehaviour(new OneShotBehaviour() {
             @Override
