@@ -8,10 +8,18 @@ public class Point implements Comparable<Point> {
 
     public final int x;
     public final int y;
+    public final int col;
 
     public Point(int x, int y) {
         this.x = x;
         this.y = y;
+        this.col = -1;
+    }
+
+    public Point(int x, int y, int col) {
+        this.x = x;
+        this.y = y;
+        this.col = col;
     }
 
     /**

@@ -1,5 +1,8 @@
 package agents;
 
+import behaviour.Behaviour;
+import behaviour.BehaviourBuilder;
+import behaviour.BehaviourWorker;
 import behaviours.ReceiveMessageBehaviour;
 import enums.Actions;
 import enums.CellType;
@@ -29,6 +32,7 @@ public class Ant extends Agent {
     private AntMessageCreator msgCreator = null;
     private PerceptionMessage currentPerception = null;
     private Point currentPos = null;
+    private Behaviour behaviour = new BehaviourBuilder();
 
     protected void setup(){
         Object args[] = getArguments();
@@ -90,115 +94,13 @@ public class Ant extends Agent {
             @Override
             public void onTick() {
                 LOG.debug("{} decides next action", getLocalName());
-                decideNextAction();
+                behaviour.decideNextAction(Ant.this, reply, currentPerception, getLocalName(), currentPos);
             }
         });
     }
 
     protected void takeDown(){
 
-    }
-
-    /**
-     * Decides which action to do next and sends a matching message to the game.
-     * service.
-     */
-    private void decideNextAction() {
-        if (reply == null) {
-            return;
-        }
-
-        // is carrying food
-        if (currentPerception.getCurrentFood() > 0) {
-
-            // drop if on start cell
-            if (currentPerception.getCell().getType() == CellType.START) {
-                LOG.debug("{} dropping food at {}", getLocalName(), currentPos);
-                sendReply(msgCreator.getMessageForAction(Actions.ANT_ACTION_DROP));
-                return;
-            }
-
-            // search for increasing gradient
-            Actions toNestMove = currentPerception.getCell().getUpGradient();
-            if (toNestMove != null) {
-                LOG.debug("{} found path to nest from {} to {}", new Object[]{getLocalName(), currentPos, toNestMove} );
-                LOG.debug("{} leaves pheromones at {}", new Object[]{getLocalName(), currentPos, toNestMove} );
-                sendReply(msgCreator.getMessageForAction(toNestMove, true));
-                return;
-            }
-        }
-
-        // current cell has food
-        if (currentPerception.getCell().getFood() > 0) {
-            LOG.debug("{} collecting food at {}", getLocalName(), currentPos);
-            sendReply(msgCreator.getMessageForAction(Actions.ANT_ACTION_COLLECT, true));
-            return;
-        }
-
-        //CO2 gradient or pheromones
-        Actions downPheromones = currentPerception.getCell().getDownPheromones();
-        if (downPheromones != null) {
-            LOG.debug("{} found path to food from {} to {}", new Object[]{getLocalName(), currentPos, downPheromones} );
-            sendReply(msgCreator.getMessageForAction(downPheromones));
-            return;
-        }
-
-        // move randomly
-        LOG.trace("{} Move randomly", getLocalName());
-        Actions randomMove = getRandomAction();
-        if (randomMove != null) {
-            LOG.debug("{} moving randomly from {} to {}", new Object[]{getLocalName(), currentPos, randomMove} );
-            sendReply(msgCreator.getMessageForAction(randomMove));
-            return;
-        }
-
-        LOG.debug("{} found no path to anywhere useful", getLocalName());
-        doDelete();
-
-    }
-
-    /**
-     * -1 - left
-     *  1 - right
-     * -2 - down
-     *  2 - up
-     * @return
-     *      Random direction
-     */
-    private int getRandomDir() {
-        int newDir = new Random().nextInt(4) - 2;
-        if(newDir == 0) newDir = 2;
-        return newDir;
-    }
-
-    /**
-     *
-     * @param dir
-     *      Direction in which the ant wants to move
-     * @return
-     *      JSON string corresponding to this direction
-     */
-    private Actions getActionFromDir(int dir) {
-        switch (dir){
-            case -1:
-                return Actions.ANT_ACTION_LEFT;
-            case 1:
-                return Actions.ANT_ACTION_RIGHT;
-            case -2:
-                return Actions.ANT_ACTION_DOWN;
-            case 2:
-                return Actions.ANT_ACTION_UP;
-        }
-        return null;
-    }
-
-    /**
-     * Generate message for random move
-     * @return
-     *      JSON format of next random move message
-     */
-    private Actions getRandomAction(){
-        return getActionFromDir(getRandomDir());
     }
 
     /**
@@ -322,14 +224,20 @@ public class Ant extends Agent {
         reply.setSender(getAID());
     }
 
-    /**
-     * Sends a reply to server with the given content.
-     *
-     * @param content
-     *            JSON serialized message
-     */
-    private void sendReply(String content) {
+    public void sendReply(String content) {
         reply.setContent(content);
+        send(reply);
+        reply = null;
+    }
+
+    public void sendReply(Actions action) {
+        reply.setContent(msgCreator.getMessageForAction(action));
+        send(reply);
+        reply = null;
+    }
+
+    public void sendReply(Actions action, boolean leavesPheromones) {
+        reply.setContent(msgCreator.getMessageForAction(action, leavesPheromones));
         send(reply);
         reply = null;
     }

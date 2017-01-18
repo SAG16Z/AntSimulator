@@ -12,6 +12,7 @@ public class CellMessage {
     private Actions downPheromones;
     private float gradient;
     private int food;
+    private int material;
     private int smell;
     private String[] ants;
 
@@ -65,6 +66,14 @@ public class CellMessage {
 
     public void setFood(int food) {
         this.food = food;
+    }
+
+    public int getMaterial() {
+        return material;
+    }
+
+    public void setMaterial(int material) {
+        this.material = material;
     }
 
     public int getSmell() {
