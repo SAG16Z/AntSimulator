@@ -63,7 +63,7 @@ public class Server2 extends Agent {
             fe.printStackTrace();
         }
         gui = new MainFrame(this);
-        mapPanel = gui.mapPanel;
+        mapPanel = new MapPanel();
         gui.setVisible(true);
 
         // Ant creating behaviour could be moved to separate
@@ -313,6 +313,7 @@ public class Server2 extends Agent {
      * @param pm
      *      perception message that gets updated
      */
+    /*
     private void updateCellPerceptionMessage(WorldCell cell, PerceptionMessage pm, Color color){
         int x = cell.getPosition().x;
         int y = cell.getPosition().y;
@@ -327,5 +328,6 @@ public class Server2 extends Agent {
         //TODO set smell and ants
         pm.setCell(cm);
     }
+    */
 }
 

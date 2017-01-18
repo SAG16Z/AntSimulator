@@ -29,10 +29,10 @@ public class BehaviourQueen extends Behaviour {
         if (fromNestMove != null && currentPerception.getCell().getGradient() > 0.5f) {
             //LOG.debug("{} found path to nest from {} to {}", new Object[]{name, currentPos, toNestMove} );
             //LOG.debug("{} leaves pheromones at {}", new Object[]{name, currentPos, toNestMove} );
-            ant.sendReply(fromNestMove, true);
+            //ant.sendReply(fromNestMove, true);
             return;
         } else {
-            ant.sendReply(Actions.ANT_ACTION_NONE);
+            //ant.sendReply(Actions.ANT_ACTION_NONE);
         }
     }
 }
