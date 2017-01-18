@@ -1,0 +1,5 @@
+package enums;
+
+public enum Action {
+    ANT_ACTION_NONE, ANT_ACTION_LOGIN, ANT_ACTION_MOVE, ANT_ACTION_COLLECT, ANT_ACTION_DROP
+}

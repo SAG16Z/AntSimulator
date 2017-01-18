@@ -10,6 +10,7 @@ public class CellMessage {
     private CellType type;
     private Actions upGradient;
     private Actions downPheromones;
+    private float gradient;
     private int food;
     private int smell;
     private String[] ants;
@@ -41,6 +42,10 @@ public class CellMessage {
     public Actions getUpGradient() {
         return upGradient;
     }
+
+    public float getGradient() { return gradient; }
+
+    public void setGradient(float gr) { gradient = gr; }
 
     public void setUpGradient(Actions upGradient) {
         this.upGradient = upGradient;
