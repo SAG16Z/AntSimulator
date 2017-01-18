@@ -4,7 +4,6 @@ import enums.Actions;
 import enums.CellType;
 import jade.core.AID;
 import map.Anthill;
-import map.Point2;
 import map.WorldCell;
 import map.Point;
 import messages.PerceptionMessage;
@@ -36,7 +35,7 @@ public class MapPanel extends JPanel {
 
     public void setAntHill(int antColor) {
         int a = 2 + new Random().nextInt(CELL_H - 4);
-        int b = 2 + new Random().nextInt(CELL_V- 4);
+        int b = 2 + new Random().nextInt(CELL_V - 4);
         Anthill anthill = new Anthill(antColor, new Point(a, b));
         anthills.add(anthill);
 
@@ -70,7 +69,7 @@ public class MapPanel extends JPanel {
     }
     public int getH() {return CELL_H;}
     public int getV() {return CELL_V;}
-    public boolean isValidPosition(Point2 point) {
+    public boolean isValidPosition(Point point) {
         return point != null && point.x >= 0 && point.x < CELL_H && point.y >= 0 && point.y < CELL_V;
     }
     public float getGradient(Point position, int color) {return worldMap[position.x][position.y].getGradient(color);}

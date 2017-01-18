@@ -6,6 +6,7 @@ import enums.Actions;
 import enums.CellType;
 import gui.MainFrame;
 import gui.MapPanel;
+import gui.MapPanel2;
 import jade.content.lang.Codec;
 import jade.content.lang.sl.SLCodec;
 import jade.content.onto.basic.Action;
@@ -45,7 +46,7 @@ public class Server2 extends AntAgentBase {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private static final int ANT_CNT = 3;
     private MainFrame gui;
-    private MapPanel mapPanel;
+    private MapPanel2 mapPanel;
     private Map<Color, AID> hills = new HashMap<>();
     private Map<AID, Point2> ants = new HashMap<>();
 
@@ -64,43 +65,35 @@ public class Server2 extends AntAgentBase {
             fe.printStackTrace();
         }
         gui = new MainFrame(this);
-        mapPanel = new MapPanel();
+        mapPanel = new MapPanel2();
         gui.setVisible(true);
 
-        // Ant creating behaviour could be moved to separate
-        // main() and called as separate program
-        addBehaviour(new OneShotBehaviour() {
-                         public void action() {
-                        AgentController ac;
-                        try {
-                            Object hill_args[] = new Object[2];
-                            hill_args[0] = Color.BLACK;
+        AgentController ac;
+        try {
+            Object hill_args[] = new Object[2];
+            hill_args[0] = Color.BLACK;
 
-                            Random r = new Random();
-                            int x = 2 + r.nextInt(MapPanel.CELL_H - 4);
-                            int y = 2 + r.nextInt(MapPanel.CELL_V - 4);
-                            hill_args[1] = new Point2(x, y);
+            Random r = new Random();
+            int x = 2 + r.nextInt(MapPanel.CELL_H - 4);
+            int y = 2 + r.nextInt(MapPanel.CELL_V - 4);
+            Point2 pos = new Point2(x, y);
+            hill_args[1] = pos;
 
-                            ac = getContainerController().createNewAgent("agents.AntHill"+0, AntHill.class.getCanonicalName(), hill_args);
-                            ac.start();
+            mapPanel.setAntHill(pos, Color.BLACK);
 
-                            Object args[] = new Object[1];
-                            args[0] = Color.BLACK;
+            ac = getContainerController().createNewAgent("agents.AntHill"+0, AntHill.class.getCanonicalName(), hill_args);
+            ac.start();
 
-                            for(int i = 0; i < ANT_CNT; i++) {
-                                ac = getContainerController().createNewAgent("agents.Ant"+i+"_"+args[0].toString(), Ant2.class.getCanonicalName(), args);
-                                ac.start();
-                            }
-                        } catch (StaleProxyException e) {
-                            e.printStackTrace();
-                        }
-                         }
-                     }
-        );
+            Object args[] = new Object[1];
+            args[0] = Color.BLACK;
 
-        // add behaviour for NOT_UNDERSTOOD message
-        MessageTemplate mtAWNotUnderstood = MessageTemplate.MatchPerformative(ACLMessage.NOT_UNDERSTOOD);
-        addBehaviour(new ReceiveMessageBehaviour(mtAWNotUnderstood, this::onAWNotUnderstood));
+            for(int i = 0; i < ANT_CNT; i++) {
+                ac = getContainerController().createNewAgent("agents.Ant"+i+"_"+args[0].toString(), Ant2.class.getCanonicalName(), args);
+                ac.start();
+            }
+        } catch (StaleProxyException e) {
+            e.printStackTrace();
+        }
 
         // add behaviour for INFORM message from antworld
         MessageTemplate mtAWRequest = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
@@ -108,6 +101,7 @@ public class Server2 extends AntAgentBase {
     }
 
 
+    @Override
     protected void takeDown(){
         // Deregister from the yellow pages
         try {
@@ -155,21 +149,11 @@ public class Server2 extends AntAgentBase {
     }
 
     /**
-     *
-     * @param msg
-     *      Message of type NOT_UNDERSTOOD
-     */
-    private void onAWNotUnderstood(ACLMessage msg) {
-        LOG.error("server received NOT_UNDERSTOOD: {}", msg);
-    }
-
-    /**
      * Handles all requests from ants - updates and sends correct
      * perception messages
      * @param msg
      *      Message of type REQUEST
      */
-
     private void onAWRequest(ACLMessage msg) {
         String content = msg.getContent();
 
@@ -180,155 +164,39 @@ public class Server2 extends AntAgentBase {
 
         AntMessage2 antmsg = new AntMessage2();
 
+        Point2 oldPoint, newPoint;
+
         switch(amsg.action) {
             case ANT_ACTION_LOGIN:
                 Random r = new Random();
-                Point2 p = new Point2(r.nextInt(mapPanel.getH()), r.nextInt(mapPanel.getV()));
+                newPoint = new Point2(r.nextInt(mapPanel.CELL_H), r.nextInt(mapPanel.CELL_V));
 
-                antmsg.position = p;
-                antmsg.cellType = CellType.FREE; //TODO: fetch from map
+                antmsg.position = newPoint;
+                antmsg.cellType = mapPanel.worldMap[newPoint.x][newPoint.y].type;
                 reply.setContent(g.toJson(antmsg, AntMessage2.class));
 
-                ants.put(msg.getSender(), p);
+                ants.put(msg.getSender(), newPoint);
                 break;
             case ANT_ACTION_MOVE:
-                Point2 oldPoint = ants.get(msg.getSender());
-                Point2 newPoint = oldPoint.adjacent(amsg.direction);
+                oldPoint = ants.get(msg.getSender());
+                newPoint = oldPoint.adjacent(amsg.direction);
 
                 if(newPoint != null && mapPanel.isValidPosition(newPoint)){
                     ants.put(msg.getSender(), newPoint);
                     antmsg.position = newPoint;
-                    antmsg.cellType = CellType.FREE; //TODO: Fetch from map
+                    antmsg.cellType = mapPanel.worldMap[newPoint.x][newPoint.y].type;
                 } else {
                     reply.setPerformative(ACLMessage.REFUSE);
                 }
+                break;
+            case ANT_ACTION_COLLECT:
+                break;
+            case ANT_ACTION_DROP:
                 break;
         }
         reply.setContent(g.toJson(antmsg, AntMessage2.class));
         send(reply);
         gui.repaint();
     }
-    /*
-    private void onAWRequest(ACLMessage msg) {
-        String content = msg.getContent();
-        AntMessage ant = messages.MessageUtil.getAnt(content);
-
-        if(ant == null) {
-            LOG.error("invalid ant request message: {}", msg);
-            return;
-        }
-        Actions action = ant.getType();
-        LOG.debug("server received request: {}", action);
-
-        // initialize reply type with not understood
-        int replyType = ACLMessage.NOT_UNDERSTOOD;
-        PerceptionMessage pm;
-
-        if(action == Actions.ANT_ACTION_LOGIN) {
-            replyType = ACLMessage.INFORM;
-            // create new perception message
-            pm = new PerceptionMessage();
-            int x = new Random().nextInt(mapPanel.getH());
-            int y = new Random().nextInt(mapPanel.getV());
-            updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm, ant.getColor());
-            // don't create zombies!
-            pm.setState("ALIVE");
-            pm.setCurrentFood(0);
-            ants.put(msg.getSender(), pm);
-        }
-        else{
-            // get perception message from hashmap
-            pm = ants.get(msg.getSender());
-
-            if(action == Actions.ANT_ACTION_DOWN ||
-                    action == Actions.ANT_ACTION_LEFT ||
-                    action == Actions.ANT_ACTION_RIGHT ||
-                    action == Actions.ANT_ACTION_UP ) {
-                replyType = ACLMessage.INFORM;
-                Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
-                if(ant.isLeavePheromones()){
-                    mapPanel.getWorldMap()[position.x][position.y].addPheromones(ant.getColor());
-                }
-                // try move ant
-                Point newPosition = null;
-                if(ant.getType() == Actions.ANT_ACTION_DOWN)
-                    newPosition = position.down();
-                else if(ant.getType() == Actions.ANT_ACTION_LEFT)
-                    newPosition = position.left();
-                else if(ant.getType() == Actions.ANT_ACTION_RIGHT)
-                    newPosition = position.right();
-                else if(ant.getType() == Actions.ANT_ACTION_UP)
-                    newPosition = position.up();
-
-                if(newPosition != null && mapPanel.isValidPosition(newPosition)){
-                    // ant can perform move
-                    // remove ant from cell
-                    mapPanel.getWorldMap()[position.x][position.y].setAnt(-1);
-                    // put ant on new cell
-                    WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
-                    newcell.setAnt(1);
-                    //update perception
-                    updateCellPerceptionMessage(newcell, pm, ant.getColor());
-                }
-                else {
-                    replyType = ACLMessage.REFUSE;
-                    //TODO also send REFUSE when there's obstacle on (x,y) or ant
-                    // is dead (with DEAD as perception message state)
-                }
-            }
-            else if(action == Actions.ANT_ACTION_COLLECT){
-                replyType = ACLMessage.INFORM;
-                int x = pm.getCell().getX();
-                int y = pm.getCell().getY();
-                if(mapPanel.getWorldMap()[x][y].getFood() > 0) {
-                    pm.setCurrentFood(mapPanel.getWorldMap()[x][y].consumeFood());
-                    pm.getCell().setFood(mapPanel.getWorldMap()[x][y].getFood());
-                }
-
-            }
-            else if(action == Actions.ANT_ACTION_DROP){
-                replyType = ACLMessage.INFORM;
-                // TODO handle food drop
-                // now ant drops food and it disappears
-                pm.setCurrentFood(0);
-
-            } else if(action == Actions.ANT_ACTION_NONE){
-                replyType = ACLMessage.INFORM;
-            }
-        }
-        // set perception action as current action requested
-        pm.setLastAction(action);
-        // build and send reply to ant
-        ACLMessage reply = prepareReply(msg, replyType);
-        reply.setContent(MessageUtil.asJsonPerception(pm));
-        send(reply);
-        // update gui
-        gui.repaint();
-    }
-    */
-
-    /**
-     * Updates CellMessage part of perception message according to given cell
-     * @param cell
-     *      world cell to get information from
-     * @param pm
-     *      perception message that gets updated
-     */
-    /*
-    private void updateCellPerceptionMessage(WorldCell cell, PerceptionMessage pm, Color color){
-        int x = cell.getPosition().x;
-        int y = cell.getPosition().y;
-        CellMessage cm = new CellMessage();
-        cm.setX(x);
-        cm.setY(y);
-        cm.setType(cell.getType());
-        cm.setFood(cell.getFood());
-        cm.setUpGradient(mapPanel.getUpGradient(cell, color));
-        cm.setGradient(mapPanel.getGradient(cell.getPosition(), color));
-        cm.setDownPheromones(mapPanel.getDownPheromones(cell, color));
-        //TODO set smell and ants
-        pm.setCell(cm);
-    }
-    */
 }
 
