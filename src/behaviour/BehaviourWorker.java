@@ -62,10 +62,10 @@ public class BehaviourWorker extends Behaviour{
 
         // move randomly
         LOG.trace("{} Move randomly", ant.getLocalName());
-        Actions randomMove = getRandomAction();
-        if (randomMove != null) {
-            LOG.debug("{} moving randomly from {} to {}", new Object[]{ant.getLocalName(), currentPos, randomMove} );
-            ant.sendReply(randomMove);
+        getRandomAction();
+        if (dir != null) {
+            LOG.debug("{} moving randomly from {} to {}", new Object[]{ant.getLocalName(), currentPos, dir} );
+            ant.sendReply(dir);
             return;
         }
 

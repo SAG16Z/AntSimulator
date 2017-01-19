@@ -20,12 +20,12 @@ public class BehaviourBuilder extends Behaviour {
             return;
         }
 
-        // is carrying food
+        // is carrying material
         if (currentPerception.getCurrentMaterial() > 0) {
 
             // drop if on start cell
             if (currentPerception.getCell().getType() == CellType.START) {
-                LOG.debug("{} dropping food at {}", ant.getLocalName(), currentPos);
+                LOG.debug("{} dropping material at {}", ant.getLocalName(), currentPos);
                 ant.sendReply(Actions.ANT_ACTION_DROP_MATERIAL);
                 return;
             }
@@ -50,17 +50,17 @@ public class BehaviourBuilder extends Behaviour {
         //CO2 gradient or pheromones
         Actions downPheromones = currentPerception.getCell().getDownPheromones();
         if (downPheromones != null) {
-            LOG.debug("{} found path to food from {} to {}", new Object[]{ant.getLocalName(), currentPos, downPheromones} );
+            LOG.debug("{} found path to material from {} to {}", new Object[]{ant.getLocalName(), currentPos, downPheromones} );
             ant.sendReply(downPheromones);
             return;
         }
 
         // move randomly
         LOG.trace("{} Move randomly", ant.getLocalName());
-        Actions randomMove = getRandomAction();
-        if (randomMove != null) {
-            LOG.debug("{} moving randomly from {} to {}", new Object[]{ant.getLocalName(), currentPos, randomMove} );
-            ant.sendReply(randomMove);
+        getRandomAction();
+        if (dir != null) {
+            LOG.debug("{} moving randomly from {} to {}", new Object[]{ant.getLocalName(), currentPos, dir} );
+            ant.sendReply(dir);
             return;
         }
 

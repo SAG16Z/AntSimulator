@@ -1,12 +1,10 @@
 package gui;
 
-import agents.AntHill;
 import jade.core.Agent;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Vector;
 
 public class MainFrame extends JFrame{
     private Agent myAgent;

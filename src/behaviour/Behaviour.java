@@ -15,6 +15,11 @@ import java.util.Random;
  */
 public abstract class Behaviour {
 
+    protected Actions dir;
+    private int dirInt = 0;
+    private static final int STEPS_CNT = 5;
+    private int steps = 0;
+
     /**
      * Decides which action to do next and sends a matching message to the game.
      * service.
@@ -22,54 +27,39 @@ public abstract class Behaviour {
     public abstract void decideNextAction(Ant ant, ACLMessage reply, PerceptionMessage currentPerception, String name, Point currentPos);
 
     /**
+     * Generate message for random move
      * -1 - left
      *  1 - right
      * -2 - down
      *  2 - up
      * @return
-     *      Random direction
-     */
-    private int getRandomDir() {
-        int newDir = new Random().nextInt(4) - 2;
-        if(newDir == 0) newDir = 2;
-        return newDir;
-    }
-
-    /**
-     *
-     * @param dir
-     *      Direction in which the ant wants to move
-     * @return
-     *      JSON string corresponding to this direction
-     */
-    private Actions getActionFromDir(int dir) {
-        switch (dir){
-            case -1:
-                return Actions.ANT_ACTION_LEFT;
-            case 1:
-                return Actions.ANT_ACTION_RIGHT;
-            case -2:
-                return Actions.ANT_ACTION_DOWN;
-            case 2:
-                return Actions.ANT_ACTION_UP;
-        }
-        return null;
-    }
-
-    /**
-     * Generate message for random move
-     * @return
      *      JSON format of next random move message
      */
-    protected Actions getRandomAction(){
-        return getActionFromDir(getRandomDir());
+    protected void getRandomAction(){
+        if(steps > 0) {
+            steps--;
+        }
+        else {
+            steps = STEPS_CNT;
+            int newDir = new Random().nextInt(4) - 2;
+            if(newDir == 0) newDir = 2;
+            if(newDir != -dirInt) {
+                dirInt = newDir;
+                switch (newDir) {
+                    case -1:
+                        dir = Actions.ANT_ACTION_LEFT;
+                        break;
+                    case 1:
+                        dir = Actions.ANT_ACTION_RIGHT;
+                        break;
+                    case -2:
+                        dir = Actions.ANT_ACTION_DOWN;
+                        break;
+                    case 2:
+                        dir = Actions.ANT_ACTION_UP;
+                }
+            }
+        }
     }
-
-    /**
-     * Sends a reply to server with the given content.
-     *
-     * @param content
-     *            JSON serialized message
-     */
 
 }

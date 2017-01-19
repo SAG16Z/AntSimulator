@@ -34,9 +34,7 @@ public class PerceptionMessage {
         this.state = state;
     }
 
-    public int getColor() {
-        return color;
-    }
+    public int getColor() { return color; }
 
     public void setColor(int color) {
         this.color = color;

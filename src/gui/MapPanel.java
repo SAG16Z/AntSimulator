@@ -21,10 +21,10 @@ public class MapPanel extends JPanel {
     private static int CELL_H = 100;
     private static int CELL_V = 100;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
-    private static float MAX_GRADIENT = 100;
+    private static float MAX_GRADIENT = 50.0f;
     private static final Logger LOG = LoggerFactory.getLogger(MapPanel.class);
     private Map<AID, PerceptionMessage> ants = new HashMap<>();
-    private ArrayList<Anthill> anthills = new ArrayList<Anthill>();
+    private Map<Integer, Anthill> anthills = new HashMap<>();
 
     public MapPanel(){
         for (int x = 0; x < worldMap.length; ++x)
@@ -34,20 +34,20 @@ public class MapPanel extends JPanel {
 
 
     public void setAntHill(int antColor) {
-        int a = 2 + new Random().nextInt(CELL_H - 4);
-        int b = 2 + new Random().nextInt(CELL_V- 4);
+        int a = Anthill.INIT_SIZE/2 + new Random().nextInt(CELL_H - Anthill.INIT_SIZE - 1);
+        int b = Anthill.INIT_SIZE/2 + new Random().nextInt(CELL_V - Anthill.INIT_SIZE - 1);
         Anthill anthill = new Anthill(antColor, new Point(a, b));
-        anthills.add(anthill);
+        anthills.put(antColor, anthill);
 
         float gradient;
         for (int x = 0; x < worldMap.length; ++x) {
             for (int y = 0; y < worldMap[x].length; ++y) {
-                if(Math.abs(anthill.getPosition().x - x) <= 1 && Math.abs(anthill.getPosition().y - y) <= 1) {
+                if(Math.abs(anthill.getPosition().x - x) <= Anthill.INIT_SIZE/2 && Math.abs(anthill.getPosition().y - y) <= Anthill.INIT_SIZE/2) {
                     worldMap[x][y].setType(CellType.START);
                     worldMap[x][y].addGradient(anthill.getColor(), MAX_GRADIENT);
                 }
                 else {
-                    gradient = (MAX_GRADIENT - (float) Math.hypot(x - anthill.getPosition().x, y - anthill.getPosition().y))/MAX_GRADIENT;
+                    gradient = Math.max(0, (MAX_GRADIENT - (float) Math.hypot(x - anthill.getPosition().x, y - anthill.getPosition().y))/MAX_GRADIENT);
                     worldMap[x][y].addGradient(anthill.getColor(), gradient);
                 }
             }
@@ -145,6 +145,8 @@ public class MapPanel extends JPanel {
     public PerceptionMessage getAnt(AID sender) {
         return ants.get(sender);
     }
+
+    public Anthill getAnthill(int col) { return anthills.get(col); }
 
 }
 

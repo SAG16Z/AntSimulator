@@ -2,6 +2,8 @@ package agents;
 
 import behaviours.ReceiveMessageBehaviour;
 import enums.Actions;
+import enums.AntRole;
+import enums.CellType;
 import gui.MainFrame;
 import gui.MapPanel;
 import jade.content.lang.Codec;
@@ -22,6 +24,7 @@ import jade.lang.acl.MessageTemplate;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
+import map.Anthill;
 import map.Point;
 import map.WorldCell;
 import messages.*;
@@ -35,7 +38,12 @@ import java.util.Random;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 3;
+    private static final int ANT_CNT = 10;
+    private static final int TEAM_CNT = 1;
+    private static final float WORKER_PROB = 0.5f;
+    //private static final float BUILDER_PROB = 0.5f;
+
+    private Color[] teamCols = {Color.cyan, Color.yellow, Color.magenta, Color.orange};
     private MainFrame gui;
     private MapPanel mapPanel;
 
@@ -55,13 +63,9 @@ public class Server extends Agent {
         }
         gui = new MainFrame(this);
         mapPanel = new MapPanel();
-        ArrayList<Integer> antColonies = new ArrayList<>();
-        antColonies.add(Color.HSBtoRGB(0.3f, 1.f, 0.5f));
-        antColonies.add(Color.HSBtoRGB(0.6f, 1.f, 0.5f));
-        antColonies.add(Color.HSBtoRGB(0.9f, 1.f, 0.5f));
 
-        for (Integer c: antColonies) {
-            mapPanel.setAntHill(c);
+        for (int i = 0; i < TEAM_CNT; i++) {
+            mapPanel.setAntHill(teamCols[i].getRGB());
         }
 
         gui.add(mapPanel);
@@ -74,11 +78,19 @@ public class Server extends Agent {
                              AgentController ac;
                              try {
                                  // spawn ants
-                                 Object args[] = new Object[1];
-                                 for (Integer c : antColonies) {
-                                     args[0] = new AntMessageCreator(c);
+                                 Object args[] = new Object[2];
+                                 for (int j = 0; j < TEAM_CNT; j++) {
+                                     args[0] = new AntMessageCreator(teamCols[j].getRGB());
                                      for (int i = 0; i < ANT_CNT; i++) {
-                                         ac = getContainerController().createNewAgent("agents.Ant" + i + "_" + c, Ant.class.getCanonicalName(), args);
+                                         float rand = new Random().nextFloat();
+                                         if(rand < WORKER_PROB) {
+                                             args[1] = AntRole.WORKER;
+                                             ac = getContainerController().createNewAgent("ant.Worker" + i + "_" + j, Ant.class.getCanonicalName(), args);
+                                         }
+                                         else {
+                                             args[1] = AntRole.BUILDER;
+                                             ac = getContainerController().createNewAgent("ant.Builder" + i + "_" + j, Ant.class.getCanonicalName(), args);
+                                         }
                                          ac.start();
                                      }
                                  }
@@ -198,6 +210,7 @@ public class Server extends Agent {
                     action == Actions.ANT_ACTION_LEFT ||
                     action == Actions.ANT_ACTION_RIGHT ||
                     action == Actions.ANT_ACTION_UP ) {
+
                 replyType = ACLMessage.INFORM;
                 Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
                 if(ant.isLeavePheromones()){
@@ -230,7 +243,7 @@ public class Server extends Agent {
                     // is dead (with DEAD as perception message state)
                 }
             }
-            else if(action == Actions.ANT_ACTION_COLLECT){
+            else if(action == Actions.ANT_ACTION_COLLECT_FOOD){
                 replyType = ACLMessage.INFORM;
                 int x = pm.getCell().getX();
                 int y = pm.getCell().getY();
@@ -238,14 +251,39 @@ public class Server extends Agent {
                     pm.setCurrentFood(mapPanel.getWorldMap()[x][y].consumeFood());
                     pm.getCell().setFood(mapPanel.getWorldMap()[x][y].getFood());
                 }
-
             }
-            else if(action == Actions.ANT_ACTION_DROP){
+            else if(action == Actions.ANT_ACTION_COLLECT_MATERIAL){
+                replyType = ACLMessage.INFORM;
+                int x = pm.getCell().getX();
+                int y = pm.getCell().getY();
+                if(mapPanel.getWorldMap()[x][y].getMaterial() > 0) {
+                    pm.setCurrentMaterial(mapPanel.getWorldMap()[x][y].consumeMaterial());
+                    pm.getCell().setMaterial(mapPanel.getWorldMap()[x][y].getMaterial());
+                }
+            }
+            else if(action == Actions.ANT_ACTION_DROP_FOOD) {
                 replyType = ACLMessage.INFORM;
                 // TODO handle food drop
                 // now ant drops food and it disappears
                 pm.setCurrentFood(0);
 
+                Anthill nest = mapPanel.getAnthill(pm.getColor());
+                if(nest.isPlace()) {
+                    Point point = nest.getNextFood();
+                    mapPanel.getWorldMap()[point.x][point.y].setGatheredFood(true);
+                    nest.setNextFood();
+                }
+            }
+            else if(action == Actions.ANT_ACTION_DROP_MATERIAL){
+                replyType = ACLMessage.INFORM;
+                // TODO handle food drop
+                // now ant drops food and it disappears
+                pm.setCurrentMaterial(0);
+
+                Anthill nest = mapPanel.getAnthill(pm.getColor());
+                Point point = nest.getNextPoint();
+                mapPanel.getWorldMap()[point.x][point.y].setType(CellType.START);
+                nest.setNextPoint();
             }
         }
         // set perception action as current action requested
@@ -291,9 +329,11 @@ public class Server extends Agent {
         cm.setY(y);
         cm.setType(cell.getType());
         cm.setFood(cell.getFood());
+        cm.setMaterial(cell.getMaterial());
         cm.setUpGradient(mapPanel.getUpGradient(cell, pm.getColor()));
         cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
         pm.setCell(cm);
     }
+
 }
 

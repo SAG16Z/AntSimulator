@@ -5,6 +5,7 @@ import behaviour.BehaviourBuilder;
 import behaviour.BehaviourWorker;
 import behaviours.ReceiveMessageBehaviour;
 import enums.Actions;
+import enums.AntRole;
 import enums.CellType;
 import jade.core.AID;
 import jade.core.Agent;
@@ -32,11 +33,17 @@ public class Ant extends Agent {
     private AntMessageCreator msgCreator = null;
     private PerceptionMessage currentPerception = null;
     private Point currentPos = null;
-    private Behaviour behaviour = new BehaviourBuilder();
+    private Behaviour behaviour;
 
     protected void setup(){
         Object args[] = getArguments();
         msgCreator = (AntMessageCreator) args[0];
+        /*AntRole role = (AntRole) args[1];
+        if(role == AntRole.WORKER)
+            behaviour = new BehaviourWorker();
+        else if(role == AntRole.BUILDER)
+            behaviour = new BehaviourBuilder();*/
+
         // Printout a welcome message
         LOG.debug("{} Hello! agent is ready.", getLocalName());
         DFAgentDescription template = new DFAgentDescription();
@@ -90,6 +97,8 @@ public class Ant extends Agent {
                                 MessageTemplate.or(mtAWRefuse, mtFailure))));
         addBehaviour(new ReceiveMessageBehaviour(mtOther, this::onUnknownMessage));
 
+        AntRole role = (AntRole) args[1];
+        setRole(role);
         addBehaviour(new TickerBehaviour(this, 20){
             @Override
             public void onTick() {
@@ -97,6 +106,13 @@ public class Ant extends Agent {
                 behaviour.decideNextAction(Ant.this, reply, currentPerception, getLocalName(), currentPos);
             }
         });
+    }
+
+    private void setRole(AntRole role) {
+        if(role == AntRole.WORKER)
+            behaviour = new BehaviourWorker();
+        else if(role == AntRole.BUILDER)
+            behaviour = new BehaviourBuilder();
     }
 
     protected void takeDown(){
