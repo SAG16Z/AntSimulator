@@ -1,19 +1,16 @@
 package map;
 
-import java.awt.Color;
-
 public class Pheromone {
     private static int TTL = 5000;
     private static int INITIAL_VALUE = 100;
     private long timeStamp;
-    private Color color;
-    private int value;
-    public Pheromone(Color color){
+    private int color;
+    public Pheromone(int color){
         this.timeStamp = System.currentTimeMillis();
         this.color = color;
     }
 
-    public Color getColor() {
+    public int getColor() {
         return color;
     }
 

@@ -2,28 +2,17 @@ package messages;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.InstanceCreator;
 import com.google.gson.JsonParseException;
 import enums.Actions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.rmi.runtime.Log;
 
-import java.awt.*;
-import java.lang.reflect.Type;
 
 public class MessageUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessageUtil.class);
 
-    private static class ColorInstanceCreator implements InstanceCreator<Color> {
-        public Color createInstance(Type type) {
-            return Color.WHITE;
-        }
-    }
-
-    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(
-            Color.class, new ColorInstanceCreator()).create();
+    private static final Gson GSON = new GsonBuilder().create();
 
     /**
      * Creates a ant message JSON string according to the given message and action type.

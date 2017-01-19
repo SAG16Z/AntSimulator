@@ -1,52 +1,56 @@
 package map;
 
 import enums.CellType;
+import messages.PerceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.awt.color.ColorSpace;
 import java.util.*;
+import java.util.List;
 
 public class WorldCell {
     private static final int FOOD_AMOUNT_TO_CONSUME = 1;
-    private static final int MATERIAL_AMOUNT_TO_CONSUME = 1;
-    private static final float FOOD_PROB = 0.01f;
+    private static final float FOOD_PROB = 0.05f;
     private static final int MAX_FOOD = 10;
-    private static final int MAX_MATERIAL = 10;
-    private static final float MATERIAL_PROB = 0.01f;
     private static final Logger LOG = LoggerFactory.getLogger(WorldCell.class);
     private Point position;
-    private int ant = 0;
-    private float gradient = 0;
-    private ArrayList<Pheromone> pheromones;
+    private List<PerceptionMessage> ants = new ArrayList<>();
+    private HashMap<Integer, Float> gradients = new HashMap<>();
+    private int maxGradientColor;
+    private ArrayList<Pheromone> pheromones = new ArrayList<>();
     private CellType type;
     private int food = 0;
-    private int material = 0;
-    private float anthillCol[];
 
 
     public void paint(Graphics g, Dimension size) {
         int w = size.width;// - insets.left - insets.right;
         int h = size.height;// - insets.top - insets.bottom;
-        if(ant > 0) { // TODO replace with ants hashmap
-            g.setColor(new Color(0.0f, 0.0f, 0.0f)); //TODO get ant color from ants list
-            g.fillRect(position.x*w, position.y*h, w, h);
+        g.setColor(Color.WHITE);
+        g.fillRect(position.x * w, position.y * h, w, h);
+        if(type == CellType.START) {
+            g.setColor(new Color(maxGradientColor));
+            g.fillRect(position.x * w, position.y * h, w, h);
         }
-        else{
-            if(type == CellType.START)
-                g.setColor(Color.blue);
-            else
-                g.setColor(Color.getHSBColor(anthillCol[0], anthillCol[1], gradient));
+        else {
+            for (int gr: gradients.keySet()) {
+                int alpha = (int)(Math.max(gradients.get(gr)*50, 0)); // set alpha
+                Color c = new Color(gr);
+                g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha));
+                g.fillRect(position.x*w, position.y*h, w, h);
+            }
+        }
+        // for now drawing all pheromones green
+        float currentPheromones = getAllPheromones() / 100.f;
+        g.setColor(new Color(0.0f, 1.0f, 0.0f, currentPheromones > 1.0f ? 1.0f : currentPheromones));
+        g.fillRect(position.x * w, position.y * h, w, h);
+        // food is red
+        g.setColor(new Color(1.0f, 0.0f, 0.0f, (float) food / MAX_FOOD));
+        g.fillRect(position.x * w, position.y * h, w, h);
 
+        if(ants.size() > 0) {
+            g.setColor(new Color(ants.get(0).getColor())); // draw just the first ant color
             g.fillRect(position.x*w, position.y*h, w, h);
-            float currentPheromones = getAllPheromones() / 100.f;
-            g.setColor(new Color(0.0f, 1.0f, 0.0f, currentPheromones > 1.0f ? 1.0f : currentPheromones));
-            g.fillRect(position.x * w, position.y * h, w, h);
-            g.setColor(new Color(1.0f, 0.0f, 0.0f, (float) food / MAX_FOOD));
-            g.fillRect(position.x * w, position.y * h, w, h);
-            g.setColor(new Color(0.0f, 0.0f, 1.0f, (float) material / MAX_MATERIAL));
-            g.fillRect(position.x * w, position.y * h, w, h);
         }
 
     }
@@ -55,25 +59,12 @@ public class WorldCell {
      * Creates new cell and puts random amount of food on it
      * @param _position
      *      (x,y) coordinates of this cell
-     * @param _gradient
-     *      gradient value
-     * @param type
-     *      cell type i.e. (START, FREE, BLOCKED)
      */
-    public WorldCell(Point _position, float _gradient, CellType type, float anthillCol[]) {
+    public WorldCell(Point _position) {
         this.position = _position;
-        this.gradient = _gradient;
-        pheromones = new ArrayList<>();
-        this.type = type;
-        if(this.type != CellType.START){
-            float prob = new Random().nextFloat() % 1;
-            if (prob < FOOD_PROB) food = new Random().nextInt(MAX_FOOD);
-            else {
-                prob = new Random().nextFloat() % 1;
-                if (prob < MATERIAL_PROB) material = new Random().nextInt(MAX_MATERIAL);
-            }
-        }
-        this.anthillCol = anthillCol;
+        this.type = CellType.FREE;
+        float prob = new Random().nextFloat() % 1;
+        if (prob < FOOD_PROB) food = new Random().nextInt(MAX_FOOD);
     }
 
     /**
@@ -82,9 +73,7 @@ public class WorldCell {
      *      Cell type i.e. (START, FREE, BLOCKED)
      */
     public CellType getType() {
-        if (type == null) {
-            LOG.warn("accessing null-type tile at {}", -1);
-        }
+        // TODO only return START if is the right color for ant
         return type;
     }
 
@@ -93,19 +82,18 @@ public class WorldCell {
      * @param _ant
      *      Number of ants to add or remove
      */
-    public void setAnt(int _ant) {
-        ant += _ant;
-        if(ant < 0) ant = 0;
+    public void setAnt(PerceptionMessage _ant) {
+        ants.add(_ant);
+    }
+
+    public void removeAnt(PerceptionMessage pm) {
+        ants.remove(pm);
     }
 
     public Point getPosition() { return position; }
 
     public int getFood() {
         return food;
-    }
-
-    public int getMaterial() {
-        return material;
     }
 
     /**
@@ -121,14 +109,6 @@ public class WorldCell {
         return consumed;
     }
 
-    public synchronized int consumeMaterial() {
-        int consumed = MATERIAL_AMOUNT_TO_CONSUME;
-        if(this.material <= MATERIAL_AMOUNT_TO_CONSUME)
-            consumed = this.material;
-        this.material -= consumed;
-        return consumed;
-    }
-
     private synchronized void removeVanishedPheromones(){
         ArrayList<Pheromone> dead = new ArrayList<>();
         for (Pheromone p : pheromones)
@@ -136,7 +116,7 @@ public class WorldCell {
         pheromones.removeAll(dead);
     }
 
-    public synchronized float getPheromones(Color color) {
+    public synchronized float getPheromones(int color) {
         float value = 0;
         removeVanishedPheromones();
         for(Pheromone p : pheromones)
@@ -153,23 +133,24 @@ public class WorldCell {
         return value;
     }
 
-    public float getGradient(Color color) {
-        // TODO change gradient to list of gradients for each color (Ant type)
-        return gradient;
+    public float getGradient(int color) {
+        return gradients.get(color);
     }
 
-    public synchronized void addPheromones(Color color) {
+    public synchronized void addPheromones(int color) {
         removeVanishedPheromones();
         pheromones.add(new Pheromone(color));
     }
 
-    public void setAnthill(boolean anthill) {
-        if(anthill) type = CellType.START;
-        else type = CellType.FREE;
+    public void setType(CellType type) {
+        this.type = type;
     }
 
-    public boolean isAnthill() {
-        return (type == CellType.START);
+    public void addGradient(int color, float gradient) {
+        if(gradients.isEmpty()) maxGradientColor = color;
+        else if(gradient > gradients.get(maxGradientColor))
+            maxGradientColor = color;
+        gradients.put(color, gradient);
     }
 }
 

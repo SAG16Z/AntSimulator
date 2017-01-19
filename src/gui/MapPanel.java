@@ -1,56 +1,55 @@
 package gui;
 
-import agents.AntHill;
 import enums.Actions;
 import enums.CellType;
+import jade.core.AID;
+import map.Anthill;
 import map.WorldCell;
 import map.Point;
+import messages.PerceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class MapPanel extends JPanel {
     private static int CELL_H = 100;
     private static int CELL_V = 100;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
-    private static int ANTHILL_CNT = 3;
     private static float MAX_GRADIENT = 100;
-    private Color[] teamCols = {Color.cyan, Color.green, Color.yellow, Color.orange, Color.magenta};
-    private static int INIT_NEST_SIZE = 5;
     private static final Logger LOG = LoggerFactory.getLogger(MapPanel.class);
+    private Map<AID, PerceptionMessage> ants = new HashMap<>();
+    private ArrayList<Anthill> anthills = new ArrayList<Anthill>();
 
     public MapPanel(){
-        Point anthills[] = new Point[ANTHILL_CNT];
-        for(int i = 0; i < ANTHILL_CNT; i++) {
-            int x = INIT_NEST_SIZE / 2 + new Random().nextInt(CELL_H - INIT_NEST_SIZE - 1);
-            int y = INIT_NEST_SIZE / 2 + new Random().nextInt(CELL_V - INIT_NEST_SIZE - 1);
-            anthills[i] = new Point(x, y, i);
-        }
+        for (int x = 0; x < worldMap.length; ++x)
+            for (int y = 0; y < worldMap[x].length; ++y)
+                worldMap[x][y] = new WorldCell(new Point(x, y));
+    }
 
-        float gradient, max_gradient;
-        float anthillColRGB[] = Color.black.getRGBColorComponents(null);
-        float anthillColHSB[] = Color.RGBtoHSB((int)anthillColRGB[0]*255, (int)anthillColRGB[1]*255, (int)anthillColRGB[2]*255, null);
+
+    public void setAntHill(int antColor) {
+        int a = 2 + new Random().nextInt(CELL_H - 4);
+        int b = 2 + new Random().nextInt(CELL_V- 4);
+        Anthill anthill = new Anthill(antColor, new Point(a, b));
+        anthills.add(anthill);
+
+        float gradient;
         for (int x = 0; x < worldMap.length; ++x) {
             for (int y = 0; y < worldMap[x].length; ++y) {
-                max_gradient = 0;
-                int i;
-                for(i = 0; i < ANTHILL_CNT; i++) {
-                    if(Math.abs(anthills[i].x - x) <= 2 && Math.abs(anthills[i].y - y) <= 2)
-                        break;
-                    else {
-                        gradient = MAX_GRADIENT - (float)Math.hypot(x - anthills[i].x, y - anthills[i].y);
-                        if(gradient > max_gradient) {
-                            max_gradient = gradient;
-                            anthillColRGB = teamCols[anthills[i].col].getRGBColorComponents(null);
-                            anthillColHSB = Color.RGBtoHSB((int)anthillColRGB[0]*255, (int)anthillColRGB[1]*255, (int)anthillColRGB[2]*255, null);
-                        }
-                    }
+                if(Math.abs(anthill.getPosition().x - x) <= 1 && Math.abs(anthill.getPosition().y - y) <= 1) {
+                    worldMap[x][y].setType(CellType.START);
+                    worldMap[x][y].addGradient(anthill.getColor(), MAX_GRADIENT);
                 }
-                if(i == ANTHILL_CNT) worldMap[x][y] = new WorldCell(new Point(x, y), max_gradient / MAX_GRADIENT, CellType.FREE, anthillColHSB);
-                else worldMap[x][y] = new WorldCell(new Point(x, y), 1, CellType.START, anthillColHSB);
+                else {
+                    gradient = (MAX_GRADIENT - (float) Math.hypot(x - anthill.getPosition().x, y - anthill.getPosition().y))/MAX_GRADIENT;
+                    worldMap[x][y].addGradient(anthill.getColor(), gradient);
+                }
             }
         }
     }
@@ -68,15 +67,15 @@ public class MapPanel extends JPanel {
     public WorldCell[][] getWorldMap(){
         return worldMap;
     }
-    static public int getH() {return CELL_H;}
-    static public int getV() {return CELL_V;}
+    public int getH() {return CELL_H;}
+    public int getV() {return CELL_V;}
     public boolean isValidPosition(Point point) {
         return point != null && point.x >= 0 && point.x < CELL_H && point.y >= 0 && point.y < CELL_V;
     }
-    public float getGradient(Point position, Color color) {return worldMap[position.x][position.y].getGradient(color);}
-    public float getPheromones(Point position, Color color) {return worldMap[position.x][position.y].getPheromones(color);}
+    public float getGradient(Point position, int color) {return worldMap[position.x][position.y].getGradient(color);}
+    public float getPheromones(Point position, int color) {return worldMap[position.x][position.y].getPheromones(color);}
 
-    public Actions getUpGradient(WorldCell cell, Color color){
+    public Actions getUpGradient(WorldCell cell, int color){
         float gradient = 0;
         Actions action = null;
         if(isValidPosition(cell.getPosition())) {
@@ -103,7 +102,7 @@ public class MapPanel extends JPanel {
         return action;
     }
 
-    public Actions getDownGradient(WorldCell cell, Color color){
+    public Actions getDownGradient(WorldCell cell, int color){
         float gradient = Float.MAX_VALUE;
         Actions action = null;
         if(isValidPosition(cell.getPosition())) {
@@ -130,13 +129,21 @@ public class MapPanel extends JPanel {
         return action;
     }
 
-    public Actions getDownPheromones(WorldCell cell, Color color){
+    public Actions getDownPheromones(WorldCell cell, int color){
         Actions action = null;
         if(isValidPosition(cell.getPosition()) && getPheromones(cell.getPosition(), color) > 0) {
             return getDownGradient(cell, color);
         }
         LOG.debug("Server sends downPheromones action to {}", action);
         return action;
+    }
+
+    public synchronized void putAnts(AID sender, PerceptionMessage pm) {
+        ants.put(sender, pm);
+    }
+
+    public PerceptionMessage getAnt(AID sender) {
+        return ants.get(sender);
     }
 
 }

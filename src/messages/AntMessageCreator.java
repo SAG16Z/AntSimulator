@@ -19,7 +19,7 @@ public class AntMessageCreator {
      * @param color
      *      Ant color
      */
-    public AntMessageCreator(Color color) {
+    public AntMessageCreator(int color) {
         AntMessage msg = new AntMessage();
         msg.setColor(color);
 

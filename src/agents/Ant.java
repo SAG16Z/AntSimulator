@@ -23,8 +23,6 @@ import messages.PerceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 public class Ant extends Agent {
@@ -211,7 +209,7 @@ public class Ant extends Agent {
         if (blockedPos == null) {
             return;
         }
-        LOG.debug("{} movement blocked on cell at {} : {}", new Object[]{getLocalName(), blockedPos, action} );
+        LOG.warn("{} movement blocked on cell at {} : {}", new Object[]{getLocalName(), blockedPos, action} );
     }
 
     /**
