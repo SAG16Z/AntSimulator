@@ -38,9 +38,9 @@ import java.util.Random;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 10;
+    private static final int ANT_CNT = 2;
     private static final int TEAM_CNT = 1;
-    private static final float WORKER_PROB = 0.5f;
+    //private static final float WORKER_PROB = 0.4f;
     //private static final float BUILDER_PROB = 0.5f;
 
     private Color[] teamCols = {Color.cyan, Color.yellow, Color.magenta, Color.orange};
@@ -78,12 +78,12 @@ public class Server extends Agent {
                              AgentController ac;
                              try {
                                  // spawn ants
-                                 Object args[] = new Object[2];
                                  for (int j = 0; j < TEAM_CNT; j++) {
-                                     args[0] = new AntMessageCreator(teamCols[j].getRGB());
                                      for (int i = 0; i < ANT_CNT; i++) {
-                                         float rand = new Random().nextFloat();
-                                         if(rand < WORKER_PROB) {
+                                         Object args[] = new Object[2];
+                                         args[0] = new AntMessageCreator(teamCols[j].getRGB());
+                                         //float rand = new Random().nextFloat();
+                                         if(i%2 == 0) {
                                              args[1] = AntRole.WORKER;
                                              ac = getContainerController().createNewAgent("ant.Worker" + i + "_" + j, Ant.class.getCanonicalName(), args);
                                          }
