@@ -1,8 +1,6 @@
 package agents;
 
-import behaviour.Behaviour;
-import behaviour.BehaviourBuilder;
-import behaviour.BehaviourWorker;
+import behaviour.*;
 import behaviours.ReceiveMessageBehaviour;
 import enums.Actions;
 import enums.AntRole;
@@ -38,11 +36,9 @@ public class Ant extends Agent {
     protected void setup(){
         Object args[] = getArguments();
         msgCreator = (AntMessageCreator) args[0];
-        /*AntRole role = (AntRole) args[1];
-        if(role == AntRole.WORKER)
-            behaviour = new BehaviourWorker();
-        else if(role == AntRole.BUILDER)
-            behaviour = new BehaviourBuilder();*/
+
+        AntRole role = (AntRole) args[1];
+        setRole(role);
 
         // Printout a welcome message
         LOG.debug("{} Hello! agent is ready.", getLocalName());
@@ -97,8 +93,6 @@ public class Ant extends Agent {
                                 MessageTemplate.or(mtAWRefuse, mtFailure))));
         addBehaviour(new ReceiveMessageBehaviour(mtOther, this::onUnknownMessage));
 
-        AntRole role = (AntRole) args[1];
-        setRole(role);
         addBehaviour(new TickerBehaviour(this, 20){
             @Override
             public void onTick() {
@@ -109,10 +103,21 @@ public class Ant extends Agent {
     }
 
     private void setRole(AntRole role) {
-        if(role == AntRole.WORKER)
-            behaviour = new BehaviourWorker();
-        else if(role == AntRole.BUILDER)
-            behaviour = new BehaviourBuilder();
+        switch(role)
+        {
+            case WORKER:
+                behaviour = new BehaviourWorker();
+                break;
+            case BUILDER:
+                behaviour = new BehaviourBuilder();
+                break;
+            case WARRIOR:
+                behaviour = new BehaviourWarrior();
+                break;
+            case QUEEN:
+                behaviour = new BehaviourQueen();
+                break;
+        }
     }
 
     protected void takeDown(){

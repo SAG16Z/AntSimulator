@@ -117,7 +117,7 @@ public class Anthill {
         }
     }
 
-    public synchronized boolean isPlace() {
+    public synchronized boolean canPlaceFood() {
         return (material > food);
     }
 }

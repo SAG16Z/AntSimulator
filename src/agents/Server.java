@@ -75,23 +75,18 @@ public class Server extends Agent {
         // main() and called as separate program
         addBehaviour(new OneShotBehaviour() {
                          public void action() {
-                             AgentController ac;
                              try {
                                  // spawn ants
                                  for (int j = 0; j < TEAM_CNT; j++) {
+                                     AntMessageCreator c = new AntMessageCreator(teamCols[j].getRGB());
                                      for (int i = 0; i < ANT_CNT; i++) {
-                                         Object args[] = new Object[2];
-                                         args[0] = new AntMessageCreator(teamCols[j].getRGB());
                                          //float rand = new Random().nextFloat();
                                          if(i%2 == 0) {
-                                             args[1] = AntRole.WORKER;
-                                             ac = getContainerController().createNewAgent("ant.Worker" + i + "_" + j, Ant.class.getCanonicalName(), args);
+                                             spawnAnt(i, j, c, AntRole.WORKER);
                                          }
                                          else {
-                                             args[1] = AntRole.BUILDER;
-                                             ac = getContainerController().createNewAgent("ant.Builder" + i + "_" + j, Ant.class.getCanonicalName(), args);
+                                             spawnAnt(i, j, c, AntRole.QUEEN);
                                          }
-                                         ac.start();
                                      }
                                  }
                              } catch (StaleProxyException e) {
@@ -110,6 +105,13 @@ public class Server extends Agent {
         addBehaviour(new ReceiveMessageBehaviour(mtAWRequest, this::onAWRequest));
     }
 
+    private void spawnAnt(int ant, int team, AntMessageCreator creator, AntRole role) throws StaleProxyException {
+        Object args[] = new Object[2];
+        args[0] = creator;
+        args[1] = role;
+        AgentController ac = getContainerController().createNewAgent(role.getName() + ant + "_" + team, Ant.class.getCanonicalName(), args);
+        ac.start();
+    }
 
     protected void takeDown(){
         // Deregister from the yellow pages
@@ -268,7 +270,7 @@ public class Server extends Agent {
                 pm.setCurrentFood(0);
 
                 Anthill nest = mapPanel.getAnthill(pm.getColor());
-                if(nest.isPlace()) {
+                if(nest.canPlaceFood()) {
                     Point point = nest.getNextFood();
                     mapPanel.getWorldMap()[point.x][point.y].setGatheredFood(true);
                     nest.setNextFood();
