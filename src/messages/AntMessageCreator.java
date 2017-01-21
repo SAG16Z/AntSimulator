@@ -10,7 +10,9 @@ public class AntMessageCreator {
                             DOWN, DOWN_AND_PHEROMONES,
                             LEFT, LEFT_AND_PHEROMONES,
                             RIGHT, RIGHT_AND_PHEROMONES,
-                            COLLECT_FOOD, COLLECT_MATERIAL, DROP_FOOD, DROP_MATERIAL;
+                            COLLECT_FOOD, COLLECT_MATERIAL,
+                            DROP_FOOD, DROP_MATERIAL,
+                            NEST;
 
     /**
      * Creates a message creator object which will use the given color for it's
@@ -36,6 +38,7 @@ public class AntMessageCreator {
         COLLECT_MATERIAL = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_COLLECT_MATERIAL);
         DROP_FOOD = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_DROP_FOOD);
         DROP_MATERIAL = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_DROP_MATERIAL);
+        NEST = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_NEST);
     }
 
     public String getMessageForAction(Actions action){
@@ -62,6 +65,8 @@ public class AntMessageCreator {
                 return DROP_FOOD;
             case ANT_ACTION_DROP_MATERIAL:
                 return DROP_MATERIAL;
+            case ANT_ACTION_NEST:
+                return NEST;
             default:
                 return "";
         }

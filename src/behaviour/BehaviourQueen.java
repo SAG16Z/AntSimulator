@@ -18,10 +18,10 @@ public class BehaviourQueen extends Behaviour {
             return;
         }
 
-        if(currentPerception.getCell().getGradientValue() < 0.1f)
+        if(currentPerception.getCell().getGradientValue() < 0.01f)
         {
-            LOG.trace("{} Bedzie doobrze", ant.getLocalName());
-            //ant.sendReply(Actions.ANT_ACTION_NEST);
+            //LOG.warn("{} Bedzie doobrze", ant.getLocalName());
+            ant.sendReply(Actions.ANT_ACTION_NEST);
             return;
         }
 

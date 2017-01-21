@@ -46,6 +46,7 @@ public class Server extends Agent {
     private Color[] teamCols = {Color.cyan, Color.yellow, Color.magenta, Color.orange};
     private MainFrame gui;
     private MapPanel mapPanel;
+    private int currentTeams = TEAM_CNT;
 
     protected void setup() {
         // Register server in the yellow pages
@@ -65,7 +66,9 @@ public class Server extends Agent {
         mapPanel = new MapPanel();
 
         for (int i = 0; i < TEAM_CNT; i++) {
-            mapPanel.setAntHill(teamCols[i].getRGB());
+            int a = Anthill.INIT_SIZE/2 + new Random().nextInt(mapPanel.getH() - Anthill.INIT_SIZE - 1);
+            int b = Anthill.INIT_SIZE/2 + new Random().nextInt(mapPanel.getV() - Anthill.INIT_SIZE - 1);
+            mapPanel.setAntHill(a, b, teamCols[i].getRGB());
         }
 
         gui.add(mapPanel);
@@ -286,6 +289,15 @@ public class Server extends Agent {
                 Point point = nest.getNextPoint();
                 mapPanel.getWorldMap()[point.x][point.y].setType(CellType.START);
                 nest.setNextPoint();
+            }
+            else if(action == Actions.ANT_ACTION_NEST) {
+                replyType = ACLMessage.AGREE; //to kill the ant
+                mapPanel.removeAnt(msg.getSender());
+
+                if(currentTeams+1 < teamCols.length) {
+                    mapPanel.setAntHill(pm.getCell().getX(), pm.getCell().getY(), teamCols[currentTeams].getRGB());
+                    currentTeams++;
+                }
             }
         }
         // set perception action as current action requested

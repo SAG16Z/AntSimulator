@@ -33,9 +33,7 @@ public class MapPanel extends JPanel {
     }
 
 
-    public void setAntHill(int antColor) {
-        int a = Anthill.INIT_SIZE/2 + new Random().nextInt(CELL_H - Anthill.INIT_SIZE - 1);
-        int b = Anthill.INIT_SIZE/2 + new Random().nextInt(CELL_V - Anthill.INIT_SIZE - 1);
+    public void setAntHill(int a, int b, int antColor) {
         Anthill anthill = new Anthill(antColor, new Point(a, b));
         anthills.put(antColor, anthill);
 
@@ -144,6 +142,10 @@ public class MapPanel extends JPanel {
 
     public PerceptionMessage getAnt(AID sender) {
         return ants.get(sender);
+    }
+
+    public void removeAnt(AID sender) {
+        ants.remove(sender);
     }
 
     public Anthill getAnthill(int col) { return anthills.get(col); }

@@ -82,6 +82,10 @@ public class Ant extends Agent {
                 MessageTemplate.MatchPerformative(ACLMessage.REFUSE));
         addBehaviour(new ReceiveMessageBehaviour(mtAWRefuse, this::onAWRefuse));
 
+        // add behaviour for AGREE message from antworld
+        MessageTemplate mtAWAgree = MessageTemplate.MatchPerformative(ACLMessage.AGREE);
+        addBehaviour(new ReceiveMessageBehaviour(mtAWAgree, this::onAWAgree));
+
         // add behaviour for MTS-error message from antworld
         MessageTemplate mtFailure = MessageTemplate.MatchPerformative(ACLMessage.FAILURE);
         addBehaviour(new ReceiveMessageBehaviour(mtFailure, this::onFailure));
@@ -144,6 +148,18 @@ public class Ant extends Agent {
      */
     private void onAWNotUnderstood(ACLMessage msg) {
         LOG.error("{} service returned NOT_UNDERSTOOD: {}", getLocalName(), msg);
+        doDelete();
+    }
+
+    /**
+     * Deletes the agent on receiving a message with performative
+     * "AGREE" from the game service. This is used to inform agent
+     * that it should die.
+     *
+     * @param msg
+     *          AGREE message from server
+     */
+    private void onAWAgree(ACLMessage msg) {
         doDelete();
     }
 
