@@ -246,7 +246,7 @@ public class Ant extends Agent {
         if (blockedPos == null) {
             return;
         }
-        LOG.warn("{} movement blocked on cell at {} : {}", new Object[]{getLocalName(), blockedPos, action} );
+        LOG.debug("{} movement blocked on cell at {} : {}", new Object[]{getLocalName(), blockedPos, action} );
     }
 
     /**

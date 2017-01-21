@@ -163,6 +163,14 @@ public class WorldCell {
         return gradients.get(color);
     }
 
+    public float getSumGradients() {
+        float value = 0.0f;
+        for (int gr: gradients.keySet()) {
+            value += gradients.get(gr);
+        }
+        return value;
+    }
+
     public synchronized void addPheromones(int color) {
         removeVanishedPheromones();
         pheromones.add(new Pheromone(color));

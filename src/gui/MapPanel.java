@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.Random;
 
 public class MapPanel extends JPanel {
-    private static int CELL_H = 100;
-    private static int CELL_V = 100;
+    public static final int CELL_H = 100;
+    public static final int CELL_V = 100;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
     private static float MAX_GRADIENT = 50.0f;
     private static final Logger LOG = LoggerFactory.getLogger(MapPanel.class);
@@ -31,7 +31,6 @@ public class MapPanel extends JPanel {
             for (int y = 0; y < worldMap[x].length; ++y)
                 worldMap[x][y] = new WorldCell(new Point(x, y));
     }
-
 
     public void setAntHill(int a, int b, int antColor) {
         Anthill anthill = new Anthill(antColor, new Point(a, b));
@@ -65,8 +64,6 @@ public class MapPanel extends JPanel {
     public WorldCell[][] getWorldMap(){
         return worldMap;
     }
-    public int getH() {return CELL_H;}
-    public int getV() {return CELL_V;}
     public boolean isValidPosition(Point point) {
         return point != null && point.x >= 0 && point.x < CELL_H && point.y >= 0 && point.y < CELL_V;
     }

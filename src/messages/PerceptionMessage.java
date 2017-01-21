@@ -10,6 +10,7 @@ public class PerceptionMessage {
     private int currentFood;
     private int currentMaterial;
     private int totalFood;
+    private int steps;
     private Actions lastAction;
     private CellMessage cell;
     private String replyId;
@@ -62,6 +63,14 @@ public class PerceptionMessage {
 
     public void setLastAction(Actions lastAction) {
         this.lastAction = lastAction;
+    }
+
+    public int getSteps() {
+        return steps;
+    }
+
+    public void setSteps(int steps) {
+        this.steps = steps;
     }
 
     public String getReplyId() {

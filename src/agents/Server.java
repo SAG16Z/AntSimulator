@@ -40,7 +40,9 @@ public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private static final int ANT_CNT = 2;
     private static final int TEAM_CNT = 1;
-    //private static final float WORKER_PROB = 0.4f;
+    public static final int SPAWN_AREA = 5;
+    private static final float WORKER_PROB = 0.5f;
+    //private static final float QUEEN_PROB = 0.1f;
     //private static final float BUILDER_PROB = 0.5f;
 
     private Color[] teamCols = {Color.cyan, Color.yellow, Color.magenta, Color.orange};
@@ -65,39 +67,8 @@ public class Server extends Agent {
         gui = new MainFrame(this);
         mapPanel = new MapPanel();
 
-        for (int i = 0; i < TEAM_CNT; i++) {
-            int a = Anthill.INIT_SIZE/2 + new Random().nextInt(mapPanel.getH() - Anthill.INIT_SIZE - 1);
-            int b = Anthill.INIT_SIZE/2 + new Random().nextInt(mapPanel.getV() - Anthill.INIT_SIZE - 1);
-            mapPanel.setAntHill(a, b, teamCols[i].getRGB());
-        }
-
         gui.add(mapPanel);
         gui.setVisible(true);
-
-        // Ant creating behaviour could be moved to separate
-        // main() and called as separate program
-        addBehaviour(new OneShotBehaviour() {
-                         public void action() {
-                             try {
-                                 // spawn ants
-                                 for (int j = 0; j < TEAM_CNT; j++) {
-                                     AntMessageCreator c = new AntMessageCreator(teamCols[j].getRGB());
-                                     for (int i = 0; i < ANT_CNT; i++) {
-                                         //float rand = new Random().nextFloat();
-                                         if(i%2 == 0) {
-                                             spawnAnt(i, j, c, AntRole.WORKER);
-                                         }
-                                         else {
-                                             spawnAnt(i, j, c, AntRole.QUEEN);
-                                         }
-                                     }
-                                 }
-                             } catch (StaleProxyException e) {
-                                 e.printStackTrace();
-                             }
-                         }
-                     }
-            );
 
         // add behaviour for NOT_UNDERSTOOD message
         MessageTemplate mtAWNotUnderstood = MessageTemplate.MatchPerformative(ACLMessage.NOT_UNDERSTOOD);
@@ -106,6 +77,12 @@ public class Server extends Agent {
         // add behaviour for INFORM message from antworld
         MessageTemplate mtAWRequest = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
         addBehaviour(new ReceiveMessageBehaviour(mtAWRequest, this::onAWRequest));
+
+        for (int i = 0; i < TEAM_CNT; i++) {
+            int a = Anthill.INIT_SIZE/2 + new Random().nextInt(mapPanel.CELL_H - Anthill.INIT_SIZE - 1);
+            int b = Anthill.INIT_SIZE/2 + new Random().nextInt(mapPanel.CELL_V - Anthill.INIT_SIZE - 1);
+            setAntHill(a, b, i);
+        }
     }
 
     private void spawnAnt(int ant, int team, AntMessageCreator creator, AntRole role) throws StaleProxyException {
@@ -114,6 +91,23 @@ public class Server extends Agent {
         args[1] = role;
         AgentController ac = getContainerController().createNewAgent(role.getName() + ant + "_" + team, Ant.class.getCanonicalName(), args);
         ac.start();
+    }
+
+    void setAntHill(int a, int b, int antTeam) {
+        mapPanel.setAntHill(a, b, teamCols[antTeam].getRGB());
+        try {
+            AntMessageCreator c = new AntMessageCreator(teamCols[antTeam].getRGB());
+            for (int i = 0; i < ANT_CNT; i++) {
+                //float rand = new Random().nextFloat();
+                if (i % 2 == 0) {
+                    spawnAnt(i, antTeam, c, AntRole.WORKER);
+                } else {
+                    spawnAnt(i, antTeam, c, AntRole.QUEEN);
+                }
+            }
+        } catch(StaleProxyException e) {
+            e.printStackTrace();
+        }
     }
 
     protected void takeDown(){
@@ -198,12 +192,20 @@ public class Server extends Agent {
             replyType = ACLMessage.INFORM;
             // create new perception message
             pm = new PerceptionMessage();
-            int x = new Random().nextInt(mapPanel.getH());
-            int y = new Random().nextInt(mapPanel.getV());
+
+            Random r = new Random();
+            Anthill nest = mapPanel.getAnthill(ant.getColor());
+            int x = nest.getPosition().x - SPAWN_AREA + r.nextInt(nest.getPosition().x + 2*SPAWN_AREA);
+            int y = nest.getPosition().y - SPAWN_AREA + r.nextInt(nest.getPosition().y + 2*SPAWN_AREA);
+            if(x < 0) x = 0;
+            if(y < 0) y = 0;
+            if(x >= mapPanel.CELL_H) x = mapPanel.CELL_H-1;
+            if(y >= mapPanel.CELL_V) y = mapPanel.CELL_V-1;
             // don't create zombies!
             pm.setState("ALIVE");
             pm.setColor(ant.getColor());
             pm.setCurrentFood(0);
+            pm.setSteps(0);
             updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
             mapPanel.putAnts(msg.getSender(), pm);
         }
@@ -294,8 +296,8 @@ public class Server extends Agent {
                 replyType = ACLMessage.AGREE; //to kill the ant
                 mapPanel.removeAnt(msg.getSender());
 
-                if(currentTeams+1 < teamCols.length) {
-                    mapPanel.setAntHill(pm.getCell().getX(), pm.getCell().getY(), teamCols[currentTeams].getRGB());
+                if(currentTeams+1 <= teamCols.length) {
+                    setAntHill(pm.getCell().getX(), pm.getCell().getY(), currentTeams);
                     currentTeams++;
                 }
             }
@@ -344,8 +346,10 @@ public class Server extends Agent {
         cm.setType(cell.getType());
         cm.setFood(cell.getFood());
         cm.setMaterial(cell.getMaterial());
+        cm.setGradientValue(mapPanel.getWorldMap()[x][y].getSumGradients());
         cm.setUpGradient(mapPanel.getUpGradient(cell, pm.getColor()));
         cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
+        pm.setSteps(pm.getSteps()+1);
         pm.setCell(cm);
     }
 

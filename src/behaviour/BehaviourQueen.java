@@ -2,7 +2,9 @@ package behaviour;
 
 import agents.Ant;
 import enums.Actions;
+import gui.MapPanel;
 import jade.lang.acl.ACLMessage;
+import map.Anthill;
 import map.Point;
 import messages.PerceptionMessage;
 import org.slf4j.Logger;
@@ -18,11 +20,16 @@ public class BehaviourQueen extends Behaviour {
             return;
         }
 
-        if(currentPerception.getCell().getGradientValue() < 0.01f)
+        if(currentPerception.getCell().getGradientValue() <= 0.001f)
         {
-            //LOG.warn("{} Bedzie doobrze", ant.getLocalName());
-            ant.sendReply(Actions.ANT_ACTION_NEST);
-            return;
+            int x = currentPerception.getCell().getX();
+            int y = currentPerception.getCell().getY();
+
+            if(x > Anthill.INIT_SIZE && x < MapPanel.CELL_H - Anthill.INIT_SIZE)
+                if(y > Anthill.INIT_SIZE && y < MapPanel.CELL_V - Anthill.INIT_SIZE) {
+                    ant.sendReply(Actions.ANT_ACTION_NEST);
+                    return;
+                }
         }
 
         LOG.trace("{} Move randomly", ant.getLocalName());
