@@ -20,7 +20,7 @@ public class BehaviourQueen extends Behaviour {
             return;
         }
 
-        if(currentPerception.getCell().getGradientValue() <= 0.001f)
+        if(currentPerception.getCell().getGradientTotalValue() <= 0.001f)
         {
             int x = currentPerception.getCell().getX();
             int y = currentPerception.getCell().getY();

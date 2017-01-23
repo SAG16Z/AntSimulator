@@ -23,7 +23,8 @@ public class MapPanel extends JPanel {
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
     private static float MAX_GRADIENT = 50.0f;
     private static final Logger LOG = LoggerFactory.getLogger(MapPanel.class);
-    private Map<AID, PerceptionMessage> ants = new HashMap<>();
+    private Map<AID, PerceptionMessage> antPerception = new HashMap<>();
+    private Map<Point, AID> antPosition = new HashMap<>();
     private Map<Integer, Anthill> anthills = new HashMap<>();
 
     public MapPanel(){
@@ -154,15 +155,25 @@ public class MapPanel extends JPanel {
     }
 
     public synchronized void putAnts(AID sender, PerceptionMessage pm) {
-        ants.put(sender, pm);
+        antPerception.put(sender, pm);
+        antPosition.put(new Point(pm.getCell().getX(), pm.getCell().getY()), sender);
     }
 
     public PerceptionMessage getAnt(AID sender) {
-        return ants.get(sender);
+        return antPerception.get(sender);
     }
 
-    public void removeAnt(AID sender) {
-        ants.remove(sender);
+    public AID getAnt(Point p) {
+        return antPosition.get(p);
+    }
+
+    public synchronized void removeAnt(AID sender) {
+        PerceptionMessage pm = getAnt(sender);
+        if(pm != null) {
+            Point p = new Point(pm.getCell().getX(), pm.getCell().getY());
+            antPosition.remove(p);
+        }
+        antPerception.remove(sender);
     }
 
     public Anthill getAnthill(int col) { return anthills.get(col); }
