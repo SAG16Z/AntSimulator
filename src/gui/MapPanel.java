@@ -76,22 +76,22 @@ public class MapPanel extends JPanel {
         Actions action = null;
         if(isValidPosition(cell.getPosition())) {
             Point adjacent = cell.getPosition().left();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) > gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().left(), color);
                 action = Actions.ANT_ACTION_LEFT;
             }
             adjacent = cell.getPosition().right();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) > gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().right(), color);
                 action = Actions.ANT_ACTION_RIGHT;
             }
             adjacent = cell.getPosition().down();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) > gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().down(), color);
                 action = Actions.ANT_ACTION_DOWN;
             }
             adjacent = cell.getPosition().up();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) > gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
                 action = Actions.ANT_ACTION_UP;
             }
         }
@@ -103,22 +103,22 @@ public class MapPanel extends JPanel {
         Actions action = null;
         if(isValidPosition(cell.getPosition())) {
             Point adjacent = cell.getPosition().left();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) < gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) <= gradient) {
                 gradient = getGradient(cell.getPosition().left(), color);
                 action = Actions.ANT_ACTION_LEFT;
             }
             adjacent = cell.getPosition().right();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) < gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) <= gradient) {
                 gradient = getGradient(cell.getPosition().right(), color);
                 action = Actions.ANT_ACTION_RIGHT;
             }
             adjacent = cell.getPosition().down();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) < gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) <= gradient) {
                 gradient = getGradient(cell.getPosition().down(), color);
                 action = Actions.ANT_ACTION_DOWN;
             }
             adjacent = cell.getPosition().up();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) < gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) <= gradient) {
                 action = Actions.ANT_ACTION_UP;
             }
         }

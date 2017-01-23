@@ -20,7 +20,7 @@ public class Anthill {
     private Direction foodDir = Direction.LEFT;
     private int foodCnt = 1;
     private int foodSize = 1;
-    private static int FOOD_FOR_QUEEN = 1000;
+    private static int FOOD_FOR_QUEEN = 9;
     private Vector<Point> foodPoints = new Vector<Point>();
     private Vector<Point> foodHoles = new Vector<Point>();
     //private Vector<Point> materialPoints = new Vector<Point>();
