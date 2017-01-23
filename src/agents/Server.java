@@ -104,11 +104,11 @@ public class Server extends Agent {
                 if (i % 2 == 0) {
                     spawnAnt(i, antTeam, c, AntRole.WORKER);
                 } else {
-                    spawnAnt(i, antTeam, c, AntRole.QUEEN);
-                }
-                else {
                     spawnAnt(i, antTeam, c, AntRole.BUILDER);
                 }
+                /*else {
+                    spawnAnt(i, antTeam, c, AntRole.QUEEN);
+                }*/
                 /*else {
                     spawnAnt(i, antTeam, c, AntRole.THIEF);
                 }*/
@@ -359,15 +359,16 @@ public class Server extends Agent {
                         mapPanel.getWorldMap()[x][y].setType(CellType.FREE);
                     }
                 }
-            else if(action == Actions.ANT_ACTION_NEST) {
-                replyType = ACLMessage.AGREE; //to kill the ant
-                mapPanel.removeAnt(msg.getSender());
+                else if(action == Actions.ANT_ACTION_NEST) {
+                    replyType = ACLMessage.AGREE; //to kill the ant
+                    mapPanel.removeAnt(msg.getSender());
 
                     if (currentTeams + 1 <= teamCols.length) {
                         setAntHill(pm.getCell().getX(), pm.getCell().getY(), currentTeams);
                         currentTeams++;
                     }
-                } else if (action == Actions.ANT_ACTION_KILL) {
+                }
+                else if (action == Actions.ANT_ACTION_KILL) {
                     replyType = ACLMessage.INFORM;
 
                     int x = pm.getCell().getX();

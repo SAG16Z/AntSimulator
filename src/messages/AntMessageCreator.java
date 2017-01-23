@@ -40,6 +40,8 @@ public class AntMessageCreator {
         DROP_FOOD = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_DROP_FOOD);
         DROP_MATERIAL = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_DROP_MATERIAL);
         NEST = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_NEST);
+        STEAL = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_STEAL);
+        KILL = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_KILL);
     }
 
     public String getMessageForAction(Actions action){
