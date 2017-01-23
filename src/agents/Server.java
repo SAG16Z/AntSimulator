@@ -39,7 +39,7 @@ import java.util.Vector;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 6;
+    private static final int ANT_CNT = 2;
     private static final int TEAM_CNT = 2;
     public static final int SPAWN_AREA = 5;
     private static final float WORKER_PROB = 0.5f;
@@ -102,7 +102,7 @@ public class Server extends Agent {
             for (int i = 0; i < ANT_CNT; i++) {
                 //float rand = new Random().nextFloat();
                 if (i % 2 == 0) {
-                    spawnAnt(i, antTeam, c, AntRole.WORKER);
+                    spawnAnt(i, antTeam, c, AntRole.WARRIOR);
                 } else {
                     spawnAnt(i, antTeam, c, AntRole.BUILDER);
                 }
@@ -234,8 +234,9 @@ public class Server extends Agent {
             pm = mapPanel.getAnt(msg.getSender());
 
             //If ant was killed by warrior, send it a message to shutdown agent
-            if(pm == null) {
-                replyType = ACLMessage.AGREE;
+            if("DEAD".equals(pm.getState())) {
+                replyType = ACLMessage.REFUSE;
+                mapPanel.removeAnt(msg.getSender());
             } else {
                 if (action == Actions.ANT_ACTION_DOWN ||
                         action == Actions.ANT_ACTION_LEFT ||
@@ -381,15 +382,14 @@ public class Server extends Agent {
                                     PerceptionMessage pem = mapPanel.getAnt(mapPanel.getAnt(p));
                                     if(pem != null)
                                         if(pem.getColor() != pm.getColor()) {
-                                            mapPanel.removeAnt(mapPanel.getAnt(p));
-                                            LOG.info("Agent killed!");
+                                            pem.setState("DEAD");
                                         }
                                 }
                 }
-                // set perception action as current action requested
-                pm.setLastAction(action);
             }
         }
+        // set perception action as current action requested
+        pm.setLastAction(action);
         // build and send reply to ant
         ACLMessage reply = prepareReply(msg, replyType);
         reply.setContent(MessageUtil.asJsonPerception(pm));
