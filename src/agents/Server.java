@@ -39,8 +39,8 @@ import java.util.Vector;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 2;
-    private static final int TEAM_CNT = 1;
+    private static final int ANT_CNT = 10;
+    private static final int TEAM_CNT = 2;
     public static final int SPAWN_AREA = 5;
     private static final float WORKER_PROB = 0.5f;
     //private static final float QUEEN_PROB = 0.1f;
@@ -104,7 +104,7 @@ public class Server extends Agent {
                 if (i % 2 == 0) {
                     spawnAnt(i, antTeam, c, AntRole.WARRIOR);
                 } else {
-                    spawnAnt(i, antTeam, c, AntRole.QUEEN);
+                    spawnAnt(i, antTeam, c, AntRole.WARRIOR);
                 }
                 /*else {
                     spawnAnt(i, antTeam, c, AntRole.QUEEN);
@@ -237,6 +237,7 @@ public class Server extends Agent {
             if("DEAD".equals(pm.getState())) {
                 replyType = ACLMessage.REFUSE;
                 mapPanel.removeAnt(msg.getSender());
+                mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()].removeAnt(pm);
             } else {
                 if (action == Actions.ANT_ACTION_DOWN ||
                         action == Actions.ANT_ACTION_LEFT ||
@@ -361,8 +362,10 @@ public class Server extends Agent {
                     }
                 }
                 else if(action == Actions.ANT_ACTION_NEST) {
-                    replyType = ACLMessage.AGREE; //to kill the ant
+                    replyType = ACLMessage.REFUSE; //to kill the ant
+                    pm.setState("DEAD");
                     mapPanel.removeAnt(msg.getSender());
+                    mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()].removeAnt(pm);
 
                     if (currentTeams + 1 <= teamCols.length) {
                         setAntHill(pm.getCell().getX(), pm.getCell().getY(), currentTeams);
