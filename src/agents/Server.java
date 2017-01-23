@@ -39,8 +39,8 @@ import java.util.Vector;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 40;
-    private static final int TEAM_CNT = 2;
+    private static final int ANT_CNT = 4;
+    private static final int TEAM_CNT = 1;
     public static final int SPAWN_AREA = 5;
     private static final float WORKER_PROB = 0.5f;
     //private static final float QUEEN_PROB = 0.1f;
@@ -101,17 +101,17 @@ public class Server extends Agent {
             AntMessageCreator c = new AntMessageCreator(teamCols[antTeam].getRGB(), false);
             for (int i = 0; i < ANT_CNT; i++) {
                 //float rand = new Random().nextFloat();
-                if (i % 2 == 0) {
-                    spawnAnt(i, antTeam, c, AntRole.WARRIOR);
-                } else {
+                if (i % 4 == 0) {
+                    spawnAnt(i, antTeam, c, AntRole.WORKER);
+                } else if (i % 4 == 1){
+                    spawnAnt(i, antTeam, c, AntRole.BUILDER);
+                }
+                else if (i % 4 == 2){
                     spawnAnt(i, antTeam, c, AntRole.WARRIOR);
                 }
-                /*else {
-                    spawnAnt(i, antTeam, c, AntRole.QUEEN);
-                }*/
-                /*else {
+                else {
                     spawnAnt(i, antTeam, c, AntRole.THIEF);
-                }*/
+                }
                 /*} else {
                     spawnAnt(i, antTeam, c, AntRole.WARRIOR);
                 }*/
@@ -437,9 +437,7 @@ public class Server extends Agent {
         cm.setX(x);
         cm.setY(y);
         cm.setType(cell.getType());
-        int food = cell.getFood();
-        if(cell.getGatheredFood()) food += 1;
-        cm.setFood(food);
+        cm.setFood(cell.getFood());
         cm.setMaterial(cell.getMaterial());
         cm.setColor(mapPanel.getWorldMap()[x][y].getMaxGradientCol());
         cm.setGradientTotalValue(mapPanel.getWorldMap()[x][y].getSumGradients());
@@ -449,9 +447,11 @@ public class Server extends Agent {
         cm.setDownGradient(mapPanel.getDownGradient(cell, up));
         //cm.setEnemyGradient(mapPanel.getWorldMap()[x][y].getEnemyGradient(pm.getColor()));
         int enemyCol = mapPanel.getWorldMap()[x][y].getEnemyGradient(pm.getColor());
-        up = mapPanel.getUpGradient(cell, enemyCol);
-        cm.setUpEnemyGradient(up);
-        cm.setDownEnemyGradient(mapPanel.getDownGradient(cell, up));
+        if(enemyCol != 0) {
+            up = mapPanel.getUpGradient(cell, enemyCol);
+            cm.setUpEnemyGradient(up);
+            cm.setDownEnemyGradient(mapPanel.getDownGradient(cell, up));
+        }
         cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
         pm.setSteps(pm.getSteps()+1);
         pm.setCell(cm);

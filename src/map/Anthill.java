@@ -7,6 +7,7 @@ import java.util.Vector;
 
 public class Anthill {
     public static final int INIT_SIZE = 3;
+    public static final int MAX_SIZE = 9;
 
     private int color;
     private Point position;
@@ -55,46 +56,46 @@ public class Anthill {
     public synchronized void setNextPoint() {
         material++;
 
-        /*if(!holes.isEmpty()) {
-            materialPoints.add(holes.lastElement());
-            return holes.remove(holes.size()-1);
+        if(!holes.isEmpty()) {
+            //materialPoints.add(holes.lastElement());
+            //return holes.remove(holes.size()-1);
+            nextPoint = holes.remove(holes.size()-1);
         }
 
-        materialPoints.add(nextPoint);
-        Point point = nextPoint;*/
+        //materialPoints.add(nextPoint);
+        //Point point = nextPoint;
 
-        if (expandDir == Direction.LEFT) {
-            nextPoint = nextPoint.up();
-            expandCnt--;
-            if(expandCnt == 0) {
-                expandDir = Direction.UP;
-                size++;
-                expandCnt = size;
-            }
-        }
-        else if (expandDir == Direction.UP) {
-            nextPoint = nextPoint.right();
-            expandCnt--;
-            if(expandCnt == 0) {
-                expandDir = Direction.RIGHT;
-                expandCnt = size;
-            }
-        }
-        else if (expandDir == Direction.RIGHT) {
-            nextPoint = nextPoint.down();
-            expandCnt--;
-            if(expandCnt == 0) {
-                size++;
-                expandDir = Direction.DOWN;
-                expandCnt = size;
-            }
-        }
-        else {
-            nextPoint = nextPoint.left();
-            expandCnt--;
-            if(expandCnt == 0) {
-                expandDir = Direction.LEFT;
-                expandCnt = size;
+        if(material < MAX_SIZE * MAX_SIZE) {
+            if (expandDir == Direction.LEFT) {
+                nextPoint = nextPoint.up();
+                expandCnt--;
+                if (expandCnt == 0) {
+                    expandDir = Direction.UP;
+                    size++;
+                    expandCnt = size;
+                }
+            } else if (expandDir == Direction.UP) {
+                nextPoint = nextPoint.right();
+                expandCnt--;
+                if (expandCnt == 0) {
+                    expandDir = Direction.RIGHT;
+                    expandCnt = size;
+                }
+            } else if (expandDir == Direction.RIGHT) {
+                nextPoint = nextPoint.down();
+                expandCnt--;
+                if (expandCnt == 0) {
+                    size++;
+                    expandDir = Direction.DOWN;
+                    expandCnt = size;
+                }
+            } else {
+                nextPoint = nextPoint.left();
+                expandCnt--;
+                if (expandCnt == 0) {
+                    expandDir = Direction.LEFT;
+                    expandCnt = size;
+                }
             }
         }
 

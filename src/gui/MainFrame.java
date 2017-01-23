@@ -17,7 +17,7 @@ public class MainFrame extends JFrame{
     public MainFrame(Agent agent){
         myAgent = agent;
         setTitle("Ant simulator");
-        setSize(810, 810);
+        setSize(1500, 1000);
 
         // Make the agent terminate when the user closes
         // the GUI using the button on the upper right corner

@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.Random;
 
 public class MapPanel extends JPanel {
-    public static final int CELL_H = 100;
-    public static final int CELL_V = 100;
+    public static final int CELL_H = 200;
+    public static final int CELL_V = 400/3;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
     private static float MAX_GRADIENT = 50.0f;
     private static final Logger LOG = LoggerFactory.getLogger(MapPanel.class);
