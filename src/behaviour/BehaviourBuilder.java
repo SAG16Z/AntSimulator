@@ -24,7 +24,7 @@ public class BehaviourBuilder extends Behaviour {
         if (currentPerception.getCurrentMaterial() > 0) {
 
             // drop if on start cell
-            if (currentPerception.getCell().getType() == CellType.START) {
+            if (currentPerception.getCell().getType() == CellType.START && currentPerception.getCell().getColor() == currentPerception.getColor()) {
                 LOG.debug("{} dropping material at {}", ant.getLocalName(), currentPos);
                 ant.sendReply(Actions.ANT_ACTION_DROP_MATERIAL);
                 return;

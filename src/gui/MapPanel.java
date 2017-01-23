@@ -41,7 +41,7 @@ public class MapPanel extends JPanel {
             for (int y = 0; y < worldMap[x].length; ++y) {
                 if(Math.abs(anthill.getPosition().x - x) <= Anthill.INIT_SIZE/2 && Math.abs(anthill.getPosition().y - y) <= Anthill.INIT_SIZE/2) {
                     worldMap[x][y].setType(CellType.START);
-                    worldMap[x][y].addGradient(anthill.getColor(), MAX_GRADIENT);
+                    worldMap[x][y].addGradient(anthill.getColor(), 1.0f);
                 }
                 else {
                     gradient = Math.max(0, (MAX_GRADIENT - (float) Math.hypot(x - anthill.getPosition().x, y - anthill.getPosition().y))/MAX_GRADIENT);
@@ -52,7 +52,7 @@ public class MapPanel extends JPanel {
     }
 
     @Override
-    public void paint(Graphics g){
+    public synchronized void paint(Graphics g){
         super.paint(g);
         int width = getSize().width / CELL_H;
         int height = getSize().height / CELL_V;
@@ -122,6 +122,26 @@ public class MapPanel extends JPanel {
             }
         }
         return action;
+    }
+
+    public Actions getDownGradient(WorldCell cell, Actions upGradient){
+        Point adjacent = cell.getPosition().down();
+        if(upGradient == Actions.ANT_ACTION_UP && isValidPosition(adjacent))
+            return Actions.ANT_ACTION_DOWN;
+
+        adjacent = cell.getPosition().up();
+        if(upGradient == Actions.ANT_ACTION_DOWN && isValidPosition(adjacent))
+            return Actions.ANT_ACTION_UP;
+
+        adjacent = cell.getPosition().left();
+        if(upGradient == Actions.ANT_ACTION_RIGHT && isValidPosition(adjacent))
+            return Actions.ANT_ACTION_LEFT;
+
+        adjacent = cell.getPosition().right();
+        if(upGradient == Actions.ANT_ACTION_LEFT && isValidPosition(adjacent))
+            return Actions.ANT_ACTION_RIGHT;
+
+        return null;
     }
 
     public Actions getDownPheromones(WorldCell cell, int color){

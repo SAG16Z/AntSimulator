@@ -97,7 +97,7 @@ public class Ant extends Agent {
                                 MessageTemplate.or(mtAWRefuse, mtFailure))));
         addBehaviour(new ReceiveMessageBehaviour(mtOther, this::onUnknownMessage));
 
-        addBehaviour(new TickerBehaviour(this, 20){
+        addBehaviour(new TickerBehaviour(this, 40){
             @Override
             public void onTick() {
                 LOG.debug("{} decides next action", getLocalName());
@@ -120,6 +120,9 @@ public class Ant extends Agent {
                 break;
             case QUEEN:
                 behaviour = new BehaviourQueen();
+                break;
+            case THIEF:
+                behaviour = new BehaviourThief();
                 break;
         }
     }
@@ -190,6 +193,14 @@ public class Ant extends Agent {
         CellMessage cm = currentPerception.getCell();
         currentPos = new Point(cm.getX(), cm.getY());
         LOG.debug("{} entered new cell at {}", getLocalName(), currentPos);
+
+        if(perceptionMsg.getLastAction() == Actions.ANT_ACTION_DROP_FOOD || perceptionMsg.getLastAction() == Actions.ANT_ACTION_DROP_MATERIAL) {
+            if (perceptionMsg.getRole() == AntRole.WORKER && perceptionMsg.getFoodToMaterialRatio() > 0.5)
+                setRole(AntRole.BUILDER);
+            else if (perceptionMsg.getRole() == AntRole.BUILDER && perceptionMsg.getFoodToMaterialRatio() <= 0.5)
+                setRole(AntRole.WORKER);
+        }
+
         prepareReply(msg);
     }
 
@@ -217,6 +228,7 @@ public class Ant extends Agent {
 
         if ("DEAD".equals(perceptionMsg.getState())) {
             LOG.info("{} is dead at {}", getLocalName(), currentPos);
+
             doDelete();
             return;
         }

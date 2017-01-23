@@ -8,6 +8,8 @@ public class AntMessage {
     private Actions type;
     private int color;
     private boolean leavePheromones = false;
+    private boolean queen = false;
+
 
     public Actions getType() {
         return type;
@@ -32,4 +34,8 @@ public class AntMessage {
     public void setLeavePheromones(boolean leavePheromones) {
         this.leavePheromones = leavePheromones;
     }
+
+    public boolean getQueen() { return queen; }
+
+    public void setQueen(boolean queen) { this.queen = queen; }
 }

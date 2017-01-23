@@ -29,7 +29,7 @@ public class BehaviourWorker extends Behaviour{
         if (currentPerception.getCurrentFood() > 0) {
 
             // drop if on start cell
-            if (currentPerception.getCell().getType() == CellType.START) {
+            if (currentPerception.getCell().getType() == CellType.START && currentPerception.getCell().getColor() == currentPerception.getColor()) {
                 LOG.debug("{} dropping food at {}", ant.getLocalName(), currentPos);
                 ant.sendReply(Actions.ANT_ACTION_DROP_FOOD);
                 return;

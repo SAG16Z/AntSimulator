@@ -35,11 +35,12 @@ import org.slf4j.LoggerFactory;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Vector;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 2;
-    private static final int TEAM_CNT = 1;
+    private static final int ANT_CNT = 6;
+    private static final int TEAM_CNT = 2;
     public static final int SPAWN_AREA = 5;
     private static final float WORKER_PROB = 0.5f;
     //private static final float QUEEN_PROB = 0.1f;
@@ -49,6 +50,7 @@ public class Server extends Agent {
     private MainFrame gui;
     private MapPanel mapPanel;
     private int currentTeams = TEAM_CNT;
+    private int queensCnt = 0;
 
     protected void setup() {
         // Register server in the yellow pages
@@ -96,14 +98,18 @@ public class Server extends Agent {
     void setAntHill(int a, int b, int antTeam) {
         mapPanel.setAntHill(a, b, teamCols[antTeam].getRGB());
         try {
-            AntMessageCreator c = new AntMessageCreator(teamCols[antTeam].getRGB());
+            AntMessageCreator c = new AntMessageCreator(teamCols[antTeam].getRGB(), false);
             for (int i = 0; i < ANT_CNT; i++) {
                 //float rand = new Random().nextFloat();
                 if (i % 2 == 0) {
                     spawnAnt(i, antTeam, c, AntRole.WORKER);
-                } else {
-                    spawnAnt(i, antTeam, c, AntRole.QUEEN);
                 }
+                else {
+                    spawnAnt(i, antTeam, c, AntRole.BUILDER);
+                }
+                /*else {
+                    spawnAnt(i, antTeam, c, AntRole.THIEF);
+                }*/
             }
         } catch(StaleProxyException e) {
             e.printStackTrace();
@@ -204,8 +210,14 @@ public class Server extends Agent {
             // don't create zombies!
             pm.setState("ALIVE");
             pm.setColor(ant.getColor());
+            pm.setQueen(ant.getQueen());
             pm.setCurrentFood(0);
             pm.setSteps(0);
+            pm.setFoodToMaterialRatio((float)nest.getFood() / (float)nest.getMaterial());
+            if(pm.getFoodToMaterialRatio() > 0.5)
+                pm.setRole(AntRole.BUILDER);
+            else
+                pm.setRole(AntRole.WORKER);
             updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
             mapPanel.putAnts(msg.getSender(), pm);
         }
@@ -270,27 +282,70 @@ public class Server extends Agent {
             }
             else if(action == Actions.ANT_ACTION_DROP_FOOD) {
                 replyType = ACLMessage.INFORM;
-                // TODO handle food drop
-                // now ant drops food and it disappears
+
                 pm.setCurrentFood(0);
 
                 Anthill nest = mapPanel.getAnthill(pm.getColor());
                 if(nest.canPlaceFood()) {
-                    Point point = nest.getNextFood();
+                    //Point point = nest.getNextFood();
+                    Point point = nest.setNextFood();
                     mapPanel.getWorldMap()[point.x][point.y].setGatheredFood(true);
-                    nest.setNextFood();
+
+                    pm.setFoodToMaterialRatio((float)nest.getFood() / (float)nest.getMaterial());
+                    if(pm.getFoodToMaterialRatio() > 0.5)
+                        pm.setRole(AntRole.BUILDER);
+                    else
+                        pm.setRole(AntRole.WORKER);
+
+                    if(nest.canCreateQueen()) {
+                        try {
+                            AntMessageCreator c = new AntMessageCreator(pm.getColor(), true);
+                            spawnAnt(0, queensCnt, c, AntRole.QUEEN);
+                            queensCnt++;
+                            Vector<Point> foodToRemove = nest.consumeFood();
+                            for(Point p : foodToRemove) {
+                                mapPanel.getWorldMap()[p.x][p.y].setGatheredFood(false);
+                            }
+                            /*Vector<Point> materialToRemove = nest.consumeMaterial();
+                            for(Point p : materialToRemove) {
+                                mapPanel.getWorldMap()[p.x][p.y].setType(CellType.FREE);
+                            }*/
+                        } catch(StaleProxyException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             }
             else if(action == Actions.ANT_ACTION_DROP_MATERIAL){
                 replyType = ACLMessage.INFORM;
-                // TODO handle food drop
-                // now ant drops food and it disappears
+
                 pm.setCurrentMaterial(0);
 
                 Anthill nest = mapPanel.getAnthill(pm.getColor());
                 Point point = nest.getNextPoint();
                 mapPanel.getWorldMap()[point.x][point.y].setType(CellType.START);
                 nest.setNextPoint();
+
+                pm.setFoodToMaterialRatio((float)nest.getFood() / (float)nest.getMaterial());
+                if(pm.getFoodToMaterialRatio() > 0.5)
+                    pm.setRole(AntRole.BUILDER);
+                else
+                    pm.setRole(AntRole.WORKER);
+            }
+            else if(action == Actions.ANT_ACTION_STEAL){
+                replyType = ACLMessage.INFORM;
+                int x = pm.getCell().getX();
+                int y = pm.getCell().getY();
+                if(mapPanel.getWorldMap()[x][y].getGatheredFood()) {
+                    pm.setCurrentFood(1);
+                    pm.getCell().setFood(1);
+                    mapPanel.getWorldMap()[x][y].setGatheredFood(false);
+                }
+                else if(mapPanel.getWorldMap()[x][y].getType() == CellType.START) {
+                    pm.setCurrentMaterial(1);
+                    pm.getCell().setMaterial(1);
+                    mapPanel.getWorldMap()[x][y].setType(CellType.FREE);
+                }
             }
             else if(action == Actions.ANT_ACTION_NEST) {
                 replyType = ACLMessage.AGREE; //to kill the ant
@@ -344,10 +399,20 @@ public class Server extends Agent {
         cm.setX(x);
         cm.setY(y);
         cm.setType(cell.getType());
-        cm.setFood(cell.getFood());
+        int food = cell.getFood();
+        if(cell.getGatheredFood()) food += 1;
+        cm.setFood(food);
         cm.setMaterial(cell.getMaterial());
+        cm.setColor(mapPanel.getWorldMap()[x][y].getMaxGradientCol());
         cm.setGradientValue(mapPanel.getWorldMap()[x][y].getSumGradients());
-        cm.setUpGradient(mapPanel.getUpGradient(cell, pm.getColor()));
+        Actions up = mapPanel.getUpGradient(cell, pm.getColor());
+        cm.setUpGradient(up);
+        cm.setDownGradient(mapPanel.getDownGradient(cell, up));
+        //cm.setEnemyGradient(mapPanel.getWorldMap()[x][y].getEnemyGradient(pm.getColor()));
+        int enemyCol = mapPanel.getWorldMap()[x][y].getEnemyGradient(pm.getColor());
+        up = mapPanel.getUpGradient(cell, enemyCol);
+        cm.setUpEnemyGradient(up);
+        cm.setDownEnemyGradient(mapPanel.getDownGradient(cell, up));
         cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
         pm.setSteps(pm.getSteps()+1);
         pm.setCell(cm);

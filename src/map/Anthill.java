@@ -2,8 +2,11 @@ package map;
 
 import enums.Direction;
 
+import java.util.List;
+import java.util.Vector;
+
 public class Anthill {
-    public static final int INIT_SIZE = 5;
+    public static final int INIT_SIZE = 3;
 
     private int color;
     private Point position;
@@ -17,6 +20,11 @@ public class Anthill {
     private Direction foodDir = Direction.LEFT;
     private int foodCnt = 1;
     private int foodSize = 1;
+    private static int FOOD_FOR_QUEEN = 1000;
+    private Vector<Point> foodPoints = new Vector<Point>();
+    private Vector<Point> foodHoles = new Vector<Point>();
+    //private Vector<Point> materialPoints = new Vector<Point>();
+    private Vector<Point> holes = new Vector<Point>();
 
     public Anthill(int antColor, Point point) {
         this.color = antColor;
@@ -25,6 +33,11 @@ public class Anthill {
         int y = position.y - INIT_SIZE/2;
         nextPoint = new Point(x, y);
         nextFood = position;
+        /*for(x = position.x - INIT_SIZE/2; x <= position.x + INIT_SIZE/2; x++) {
+            for(y = position.y - INIT_SIZE/2; y <= position.y + INIT_SIZE/2; y++) {
+                materialPoints.add(new Point(x,y));
+            }
+        }*/
     }
 
     public Point getPosition() {
@@ -41,6 +54,14 @@ public class Anthill {
 
     public synchronized void setNextPoint() {
         material++;
+
+        /*if(!holes.isEmpty()) {
+            materialPoints.add(holes.lastElement());
+            return holes.remove(holes.size()-1);
+        }
+
+        materialPoints.add(nextPoint);
+        Point point = nextPoint;*/
 
         if (expandDir == Direction.LEFT) {
             nextPoint = nextPoint.up();
@@ -76,10 +97,20 @@ public class Anthill {
                 expandCnt = size;
             }
         }
+
+        //return point;
     }
 
-    public synchronized void setNextFood() {
+    public synchronized Point setNextFood() {
         food++;
+
+        if(!foodHoles.isEmpty()) {
+            foodPoints.add(foodHoles.lastElement());
+            return foodHoles.remove(foodHoles.size()-1);
+        }
+
+        foodPoints.add(nextFood);
+        Point point = nextFood;
 
         if (foodDir == Direction.LEFT) {
             nextFood = nextFood.left();
@@ -115,9 +146,32 @@ public class Anthill {
                 foodCnt = foodSize;
             }
         }
+
+        return point;
     }
 
     public synchronized boolean canPlaceFood() {
         return (material > food);
     }
+    public synchronized int getFood() { return food; }
+    public synchronized int getMaterial() { return material; }
+    public synchronized boolean canCreateQueen() { return (food >= FOOD_FOR_QUEEN); }
+
+    public synchronized Vector<Point> consumeFood() {
+        food -= FOOD_FOR_QUEEN;
+        List<Point> list = foodPoints.subList(foodPoints.size()-FOOD_FOR_QUEEN, foodPoints.size());
+        foodHoles.addAll(list);
+        Vector<Point> foodToRemove = new Vector<Point>(list);
+        list.clear();
+        return foodToRemove;
+    }
+
+    /*public synchronized Vector<Point> consumeMaterial() {
+        material -= FOOD_FOR_QUEEN;
+        List<Point> list = materialPoints.subList(materialPoints.size()-FOOD_FOR_QUEEN, materialPoints.size());
+        holes.addAll(list);
+        Vector<Point> materialToRemove = new Vector<Point>(list);
+        list.clear();
+        return materialToRemove;
+    }*/
 }

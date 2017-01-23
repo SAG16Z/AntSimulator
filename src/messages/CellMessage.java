@@ -9,10 +9,15 @@ public class CellMessage {
     private int y;
     private CellType type;
     private Actions upGradient;
+    private Actions downGradient;
+    private Actions upEnemyGradient;
+    private Actions downEnemyGradient;
     private float gradientValue;
+    //private float enemyGradient;
     private Actions downPheromones;
     private int food;
     private int material;
+    private int color;
     private int smell;
     private String[] ants;
 
@@ -52,8 +57,32 @@ public class CellMessage {
         return gradientValue;
     }
 
+    //public void setEnemyGradient(float gradient) { this.enemyGradient = gradient; }
+
+    /*public float getEnemyGradient() {
+        return enemyGradient;
+    }*/
+
     public void setUpGradient(Actions upGradient) {
         this.upGradient = upGradient;
+    }
+
+    public Actions getDownGradient() { return downGradient; }
+
+    public void setDownGradient(Actions downGradient) {
+        this.downGradient = downGradient;
+    }
+
+    public Actions getUpEnemyGradient() { return upEnemyGradient; }
+
+    public void setUpEnemyGradient(Actions upGradient) {
+        this.upEnemyGradient = upGradient;
+    }
+
+    public Actions getDownEnemyGradient() { return downEnemyGradient; }
+
+    public void setDownEnemyGradient(Actions downGradient) {
+        this.downEnemyGradient = downGradient;
     }
 
     public Actions getDownPheromones() {
@@ -80,13 +109,17 @@ public class CellMessage {
         this.material = material;
     }
 
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) { this.color = color; }
+
     public int getSmell() {
         return smell;
     }
 
-    public void setSmell(int smell) {
-        this.smell = smell;
-    }
+    public void setSmell(int smell) { this.smell = smell; }
 
     public String[] getAnts() {
         return ants;

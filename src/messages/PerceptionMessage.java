@@ -1,6 +1,7 @@
 package messages;
 
 import enums.Actions;
+import enums.AntRole;
 
 public class PerceptionMessage {
 
@@ -14,6 +15,9 @@ public class PerceptionMessage {
     private Actions lastAction;
     private CellMessage cell;
     private String replyId;
+    private boolean queen = false;
+    private float foodToMaterialRatio;
+    private AntRole role;
 
 
 
@@ -97,4 +101,15 @@ public class PerceptionMessage {
         this.cell = cell;
     }
 
+    public boolean isQueen() { return queen; }
+
+    public void setQueen(boolean queen) { this.queen = queen; }
+
+    public void setFoodToMaterialRatio(float ratio) { this.foodToMaterialRatio = ratio; }
+
+    public float getFoodToMaterialRatio() { return foodToMaterialRatio; }
+
+    public void setRole(AntRole role) { this.role = role; }
+
+    public AntRole getRole() { return role; }
 }

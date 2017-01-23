@@ -17,7 +17,7 @@ public abstract class Behaviour {
 
     protected Actions dir;
     private int dirInt = 0;
-    private static final int STEPS_CNT = 5;
+    private static final int STEPS_CNT = 3;
     private int steps = 0;
 
     /**

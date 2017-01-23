@@ -17,24 +17,26 @@ public class WorldCell {
     private static final int MAX_MATERIAL = 10;
     private static final float MATERIAL_PROB = 0.01f;
     private static final Logger LOG = LoggerFactory.getLogger(WorldCell.class);
+
     private Point position;
     private List<PerceptionMessage> ants = new ArrayList<>();
     private HashMap<Integer, Float> gradients = new HashMap<>();
-    private int maxGradientColor;
+    private int maxGradientColors[] = new int[2];
     private ArrayList<Pheromone> pheromones = new ArrayList<>();
     private CellType type;
     private int food = 0;
     private int material = 0;
     private boolean gatheredFood = false;
+    private static Color queenCol = Color.white;
 
 
-    public void paint(Graphics g, Dimension size) {
+    public synchronized void paint(Graphics g, Dimension size) {
         int w = size.width;// - insets.left - insets.right;
         int h = size.height;// - insets.top - insets.bottom;
         g.setColor(Color.BLACK);
         g.fillRect(position.x * w, position.y * h, w, h);
         if(type == CellType.START) {
-            g.setColor(new Color(maxGradientColor));
+            g.setColor(new Color(maxGradientColors[0]));
             g.fillRect(position.x * w, position.y * h, w, h);
         }
         else {
@@ -60,8 +62,11 @@ public class WorldCell {
             g.fillRect(position.x * w, position.y * h, w, h);
         }
 
-        if(ants.size() > 0) {
-            g.setColor(new Color(ants.get(0).getColor())); // draw just the first ant color
+        if(!ants.isEmpty()) {
+            if(ants.get(0).isQueen())
+                g.setColor(queenCol);
+            else
+                g.setColor(new Color(ants.get(0).getColor())); // draw just the first ant color
             g.fillRect(position.x*w, position.y*h, w, h);
         }
 
@@ -89,7 +94,6 @@ public class WorldCell {
      *      Cell type i.e. (START, FREE, BLOCKED)
      */
     public CellType getType() {
-        // TODO only return START if is the right color for ant
         return type;
     }
 
@@ -163,6 +167,16 @@ public class WorldCell {
         return gradients.get(color);
     }
 
+    public int getEnemyGradient(int color) {
+        if(gradients.isEmpty())
+            return 0;
+        if(color != maxGradientColors[0])
+            return maxGradientColors[0];
+        if(gradients.size() == 1)
+            return 0;
+        return maxGradientColors[1];
+    }
+
     public float getSumGradients() {
         float value = 0.0f;
         for (int gr: gradients.keySet()) {
@@ -186,13 +200,25 @@ public class WorldCell {
     }
 
     public void addGradient(int color, float gradient) {
-        if(gradients.isEmpty()) maxGradientColor = color;
-        else if(gradient > gradients.get(maxGradientColor))
-            maxGradientColor = color;
+        if(gradient > 1) gradient = 1.0f;
+        else if(gradient < 0) gradient = 0.0f;
+        if(gradients.isEmpty()) maxGradientColors[0] = color;
+        else if(gradient > gradients.get(maxGradientColors[0])) {
+            maxGradientColors[1] = maxGradientColors[0];
+            maxGradientColors[0] = color;
+        }
+        else if(gradients.size() == 1) maxGradientColors[1] = color;
+        else if(gradient > gradients.get(maxGradientColors[1])) {
+            maxGradientColors[1] = color;
+        }
         gradients.put(color, gradient);
     }
 
     public synchronized void setGatheredFood(boolean food) { gatheredFood = food; }
+
+    public synchronized boolean getGatheredFood() { return gatheredFood; }
+
+    public synchronized int getMaxGradientCol() { return maxGradientColors[0]; }
 
 }
 
