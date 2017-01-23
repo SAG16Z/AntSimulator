@@ -100,9 +100,9 @@ public class Server extends Agent {
             for (int i = 0; i < ANT_CNT; i++) {
                 //float rand = new Random().nextFloat();
                 if (i % 2 == 0) {
-                    spawnAnt(i, antTeam, c, AntRole.WORKER);
-                } else {
                     spawnAnt(i, antTeam, c, AntRole.QUEEN);
+                } else {
+                    spawnAnt(i, antTeam, c, AntRole.WARRIOR);
                 }
             }
         } catch(StaleProxyException e) {
@@ -208,102 +208,121 @@ public class Server extends Agent {
             pm.setSteps(0);
             updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
             mapPanel.putAnts(msg.getSender(), pm);
+
+            // set perception action as current action requested
+            pm.setLastAction(action);
         }
-        else{
+        else {
             // get perception message from hashmap
             pm = mapPanel.getAnt(msg.getSender());
 
-            if(action == Actions.ANT_ACTION_DOWN ||
-                    action == Actions.ANT_ACTION_LEFT ||
-                    action == Actions.ANT_ACTION_RIGHT ||
-                    action == Actions.ANT_ACTION_UP ) {
+            //If ant was killed by warrior, send it a message to shutdown agent
+            if(pm == null) {
+                replyType = ACLMessage.AGREE;
+            } else {
+                if (action == Actions.ANT_ACTION_DOWN ||
+                        action == Actions.ANT_ACTION_LEFT ||
+                        action == Actions.ANT_ACTION_RIGHT ||
+                        action == Actions.ANT_ACTION_UP) {
 
-                replyType = ACLMessage.INFORM;
-                Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
-                if(ant.isLeavePheromones()){
-                    mapPanel.getWorldMap()[position.x][position.y].addPheromones(ant.getColor());
-                }
-                // try move ant
-                Point newPosition = null;
-                if(ant.getType() == Actions.ANT_ACTION_DOWN)
-                    newPosition = position.down();
-                else if(ant.getType() == Actions.ANT_ACTION_LEFT)
-                    newPosition = position.left();
-                else if(ant.getType() == Actions.ANT_ACTION_RIGHT)
-                    newPosition = position.right();
-                else if(ant.getType() == Actions.ANT_ACTION_UP)
-                    newPosition = position.up();
+                    replyType = ACLMessage.INFORM;
+                    Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
+                    if (ant.isLeavePheromones()) {
+                        mapPanel.getWorldMap()[position.x][position.y].addPheromones(ant.getColor());
+                    }
+                    // try move ant
+                    Point newPosition = null;
+                    if (ant.getType() == Actions.ANT_ACTION_DOWN)
+                        newPosition = position.down();
+                    else if (ant.getType() == Actions.ANT_ACTION_LEFT)
+                        newPosition = position.left();
+                    else if (ant.getType() == Actions.ANT_ACTION_RIGHT)
+                        newPosition = position.right();
+                    else if (ant.getType() == Actions.ANT_ACTION_UP)
+                        newPosition = position.up();
 
-                if(newPosition != null && mapPanel.isValidPosition(newPosition)){
-                    // ant can perform move
-                    // remove ant from cell
-                    mapPanel.getWorldMap()[position.x][position.y].removeAnt(pm);
-                    // put ant on new cell
-                    WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
-                    newcell.setAnt(pm);
-                    //update perception
-                    updateCellPerceptionMessage(newcell, pm);
-                }
-                else {
-                    replyType = ACLMessage.REFUSE;
-                    //TODO also send REFUSE when there's obstacle on (x,y) or ant
-                    // is dead (with DEAD as perception message state)
-                }
-            }
-            else if(action == Actions.ANT_ACTION_COLLECT_FOOD){
-                replyType = ACLMessage.INFORM;
-                int x = pm.getCell().getX();
-                int y = pm.getCell().getY();
-                if(mapPanel.getWorldMap()[x][y].getFood() > 0) {
-                    pm.setCurrentFood(mapPanel.getWorldMap()[x][y].consumeFood());
-                    pm.getCell().setFood(mapPanel.getWorldMap()[x][y].getFood());
-                }
-            }
-            else if(action == Actions.ANT_ACTION_COLLECT_MATERIAL){
-                replyType = ACLMessage.INFORM;
-                int x = pm.getCell().getX();
-                int y = pm.getCell().getY();
-                if(mapPanel.getWorldMap()[x][y].getMaterial() > 0) {
-                    pm.setCurrentMaterial(mapPanel.getWorldMap()[x][y].consumeMaterial());
-                    pm.getCell().setMaterial(mapPanel.getWorldMap()[x][y].getMaterial());
-                }
-            }
-            else if(action == Actions.ANT_ACTION_DROP_FOOD) {
-                replyType = ACLMessage.INFORM;
-                // TODO handle food drop
-                // now ant drops food and it disappears
-                pm.setCurrentFood(0);
+                    if (newPosition != null && mapPanel.isValidPosition(newPosition)) {
+                        // ant can perform move
+                        // remove ant from cell
+                        mapPanel.getWorldMap()[position.x][position.y].removeAnt(pm);
+                        // put ant on new cell
+                        WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
+                        newcell.setAnt(pm);
+                        //update perception
+                        updateCellPerceptionMessage(newcell, pm);
+                    } else {
+                        replyType = ACLMessage.REFUSE;
+                        //TODO also send REFUSE when there's obstacle on (x,y) or ant
+                        // is dead (with DEAD as perception message state)
+                    }
+                } else if (action == Actions.ANT_ACTION_COLLECT_FOOD) {
+                    replyType = ACLMessage.INFORM;
+                    int x = pm.getCell().getX();
+                    int y = pm.getCell().getY();
+                    if (mapPanel.getWorldMap()[x][y].getFood() > 0) {
+                        pm.setCurrentFood(mapPanel.getWorldMap()[x][y].consumeFood());
+                        pm.getCell().setFood(mapPanel.getWorldMap()[x][y].getFood());
+                    }
+                } else if (action == Actions.ANT_ACTION_COLLECT_MATERIAL) {
+                    replyType = ACLMessage.INFORM;
+                    int x = pm.getCell().getX();
+                    int y = pm.getCell().getY();
+                    if (mapPanel.getWorldMap()[x][y].getMaterial() > 0) {
+                        pm.setCurrentMaterial(mapPanel.getWorldMap()[x][y].consumeMaterial());
+                        pm.getCell().setMaterial(mapPanel.getWorldMap()[x][y].getMaterial());
+                    }
+                } else if (action == Actions.ANT_ACTION_DROP_FOOD) {
+                    replyType = ACLMessage.INFORM;
+                    // TODO handle food drop
+                    // now ant drops food and it disappears
+                    pm.setCurrentFood(0);
 
-                Anthill nest = mapPanel.getAnthill(pm.getColor());
-                if(nest.canPlaceFood()) {
-                    Point point = nest.getNextFood();
-                    mapPanel.getWorldMap()[point.x][point.y].setGatheredFood(true);
-                    nest.setNextFood();
-                }
-            }
-            else if(action == Actions.ANT_ACTION_DROP_MATERIAL){
-                replyType = ACLMessage.INFORM;
-                // TODO handle food drop
-                // now ant drops food and it disappears
-                pm.setCurrentMaterial(0);
+                    Anthill nest = mapPanel.getAnthill(pm.getColor());
+                    if (nest.canPlaceFood()) {
+                        Point point = nest.getNextFood();
+                        mapPanel.getWorldMap()[point.x][point.y].setGatheredFood(true);
+                        nest.setNextFood();
+                    }
+                } else if (action == Actions.ANT_ACTION_DROP_MATERIAL) {
+                    replyType = ACLMessage.INFORM;
+                    // TODO handle food drop
+                    // now ant drops food and it disappears
+                    pm.setCurrentMaterial(0);
 
-                Anthill nest = mapPanel.getAnthill(pm.getColor());
-                Point point = nest.getNextPoint();
-                mapPanel.getWorldMap()[point.x][point.y].setType(CellType.START);
-                nest.setNextPoint();
-            }
-            else if(action == Actions.ANT_ACTION_NEST) {
-                replyType = ACLMessage.AGREE; //to kill the ant
-                mapPanel.removeAnt(msg.getSender());
+                    Anthill nest = mapPanel.getAnthill(pm.getColor());
+                    Point point = nest.getNextPoint();
+                    mapPanel.getWorldMap()[point.x][point.y].setType(CellType.START);
+                    nest.setNextPoint();
+                } else if (action == Actions.ANT_ACTION_NEST) {
+                    replyType = ACLMessage.AGREE; //to kill the ant
+                    mapPanel.removeAnt(msg.getSender());
 
-                if(currentTeams+1 <= teamCols.length) {
-                    setAntHill(pm.getCell().getX(), pm.getCell().getY(), currentTeams);
-                    currentTeams++;
+                    if (currentTeams + 1 <= teamCols.length) {
+                        setAntHill(pm.getCell().getX(), pm.getCell().getY(), currentTeams);
+                        currentTeams++;
+                    }
+                } else if (action == Actions.ANT_ACTION_KILL) {
+                    replyType = ACLMessage.INFORM;
+
+                    int x = pm.getCell().getX();
+                    int y = pm.getCell().getY();
+                    for(int i = x-1; i < x+1; i++)
+                        for(int j = y-1; j < y+1; j++)
+                            if(x >= 0 && x < MapPanel.CELL_H)
+                                if(y >= 0 && y < MapPanel.CELL_V) {
+                                    Point p = new Point(i, j);
+                                    PerceptionMessage pem = mapPanel.getAnt(mapPanel.getAnt(p));
+                                    if(pem != null)
+                                        if(pem.getColor() != pm.getColor()) {
+                                            mapPanel.removeAnt(mapPanel.getAnt(p));
+                                            LOG.info("Agent killed!");
+                                        }
+                                }
                 }
+                // set perception action as current action requested
+                pm.setLastAction(action);
             }
         }
-        // set perception action as current action requested
-        pm.setLastAction(action);
         // build and send reply to ant
         ACLMessage reply = prepareReply(msg, replyType);
         reply.setContent(MessageUtil.asJsonPerception(pm));
@@ -351,6 +370,20 @@ public class Server extends Agent {
         cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
         pm.setSteps(pm.getSteps()+1);
         pm.setCell(cm);
+
+        boolean enemies = false;
+        for(int i = x-1; i < x+1; i++)
+            for(int j = y-1; j < y+1; j++)
+                if(x >= 0 && x < MapPanel.CELL_H)
+                    if(y >= 0 && y < MapPanel.CELL_V) {
+                        Point p = new Point(i, j);
+                        PerceptionMessage pem = mapPanel.getAnt(mapPanel.getAnt(p));
+                        if(pem != null)
+                            if(pem.getColor() != pm.getColor()) {
+                                enemies = true;
+                            }
+                    }
+        pm.setEnemiesNearby(enemies);
     }
 
 }

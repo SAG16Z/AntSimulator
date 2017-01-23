@@ -11,6 +11,7 @@ public class PerceptionMessage {
     private int currentMaterial;
     private int totalFood;
     private int steps;
+    private boolean enemiesNearby;
     private Actions lastAction;
     private CellMessage cell;
     private String replyId;
@@ -55,6 +56,14 @@ public class PerceptionMessage {
 
     public void setCurrentMaterial(int currentMaterial) {
         this.currentMaterial = currentMaterial;
+    }
+
+    public boolean getEnemiesNearby() {
+        return enemiesNearby;
+    }
+
+    public void setEnemiesNearby(boolean enemiesNearby) {
+        this.enemiesNearby = enemiesNearby;
     }
 
     public Actions getLastAction() {

@@ -9,6 +9,7 @@ public class CellMessage {
     private int y;
     private CellType type;
     private Actions upGradient;
+    private float gradientTotalValue;
     private float gradientValue;
     private Actions downPheromones;
     private int food;
@@ -42,6 +43,14 @@ public class CellMessage {
 
     public Actions getUpGradient() {
         return upGradient;
+    }
+
+    public void setGradientTotalValue(float gradientTotalValue) {
+        this.gradientTotalValue = gradientTotalValue;
+    }
+
+    public float getGradientTotalValue() {
+        return gradientTotalValue;
     }
 
     public void setGradientValue(float gradientValue) {
