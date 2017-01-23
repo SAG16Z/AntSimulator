@@ -40,7 +40,7 @@ import java.util.Vector;
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private static final int ANT_CNT = 2;
-    private static final int TEAM_CNT = 2;
+    private static final int TEAM_CNT = 1;
     public static final int SPAWN_AREA = 5;
     private static final float WORKER_PROB = 0.5f;
     //private static final float QUEEN_PROB = 0.1f;
@@ -104,7 +104,7 @@ public class Server extends Agent {
                 if (i % 2 == 0) {
                     spawnAnt(i, antTeam, c, AntRole.WARRIOR);
                 } else {
-                    spawnAnt(i, antTeam, c, AntRole.BUILDER);
+                    spawnAnt(i, antTeam, c, AntRole.QUEEN);
                 }
                 /*else {
                     spawnAnt(i, antTeam, c, AntRole.QUEEN);
@@ -435,7 +435,8 @@ public class Server extends Agent {
         cm.setFood(food);
         cm.setMaterial(cell.getMaterial());
         cm.setColor(mapPanel.getWorldMap()[x][y].getMaxGradientCol());
-        cm.setGradientValue(mapPanel.getWorldMap()[x][y].getSumGradients());
+        cm.setGradientTotalValue(mapPanel.getWorldMap()[x][y].getSumGradients());
+        cm.setGradientValue(mapPanel.getWorldMap()[x][y].getGradient(pm.getColor()));
         Actions up = mapPanel.getUpGradient(cell, pm.getColor());
         cm.setUpGradient(up);
         cm.setDownGradient(mapPanel.getDownGradient(cell, up));
