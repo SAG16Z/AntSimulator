@@ -5,22 +5,4 @@ package enums;
  */
 public enum AntRole {
     WORKER, BUILDER, WARRIOR, QUEEN, THIEF;
-
-    public String getName() {
-        switch(this)
-        {
-            case WORKER:
-                return "ant.Worker";
-            case BUILDER:
-                return "ant.Builder";
-            case QUEEN:
-                return "ant.Queen";
-            case WARRIOR:
-                return "ant.Warrior";
-            case THIEF:
-                return "ant.Thief";
-            default:
-                return "";
-        }
-    }
 }

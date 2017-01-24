@@ -117,14 +117,14 @@ public class MapPanel extends JPanel {
     }
 
     public Actions getUpEnemyGradient(WorldCell cell, int color) {
-        int enemyColor = cell.getEnemyGradient(color);
+        int enemyColor = cell.getEnemyGradientColor(color);
         if(enemyColor != 0)
             return getGradient(cell, enemyColor, true);
         return null;
     }
 
     public Actions getDownEnemyGradient(WorldCell cell, int color) {
-        int enemyColor = cell.getEnemyGradient(color);
+        int enemyColor = cell.getEnemyGradientColor(color);
         if(enemyColor != 0)
             return getGradient(cell, enemyColor, true);
         return null;

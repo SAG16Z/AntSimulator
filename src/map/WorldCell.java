@@ -15,9 +15,10 @@ public class WorldCell {
     private static final int FOOD_AMOUNT_TO_CONSUME = 1;
     private static final int MATERIAL_AMOUNT_TO_CONSUME = 1;
     private static final float FOOD_PROB = 0.05f;
-    public static final int MAX_FOOD = 10;
+    private static final int MAX_FOOD = 10;
     private static final int MAX_MATERIAL = 10;
     private static final float MATERIAL_PROB = 0.01f;
+    private static final Color QUEEN_COLOR = Color.white;
     private static final Logger LOG = LoggerFactory.getLogger(WorldCell.class);
 
     private Point position;
@@ -29,7 +30,6 @@ public class WorldCell {
     private int food = 0;
     private int material = 0;
     private boolean gatheredFood = false;
-    private static Color queenCol = Color.white;
     private boolean hasChanged = true;
 
 
@@ -58,6 +58,7 @@ public class WorldCell {
             // food is red
             g.setColor(new Color(1.0f, 0.0f, 0.0f, (float) food / MAX_FOOD));
             g.fillRect(position.x * w, position.y * h, w, h);
+            // material is blue
             g.setColor(new Color(0.0f, 0.0f, 1.0f, (float) material / MAX_MATERIAL));
             g.fillRect(position.x * w, position.y * h, w, h);
 
@@ -68,7 +69,7 @@ public class WorldCell {
 
             if (!ants.isEmpty()) {
                 if (ants.get(0).isQueen())
-                    g.setColor(queenCol);
+                    g.setColor(QUEEN_COLOR);
                 else
                     g.setColor(new Color(ants.get(0).getColor())); // draw just the first ant color
                 g.fillRect(position.x * w, position.y * h, w, h);
@@ -86,7 +87,8 @@ public class WorldCell {
         this.position = _position;
         this.type = CellType.FREE;
         float prob = new Random().nextFloat() % 1;
-        if (prob < FOOD_PROB) food = new Random().nextInt(MAX_FOOD);
+        if (prob < FOOD_PROB)
+            food = new Random().nextInt(MAX_FOOD);
         else {
             prob = new Random().nextFloat() % 1;
             if (prob < MATERIAL_PROB) material = new Random().nextInt(MAX_MATERIAL);
@@ -180,7 +182,7 @@ public class WorldCell {
         return gradients.get(color);
     }
 
-    public int getEnemyGradient(int color) {
+    public int getEnemyGradientColor(int color) {
         if(gradients.isEmpty())
             return 0;
         if(color != maxGradientColors[0])
@@ -230,8 +232,10 @@ public class WorldCell {
         hasChanged = true;
     }
 
-    public synchronized void setGatheredFood(boolean food) { gatheredFood = food;
-    hasChanged = true;}
+    public synchronized void setGatheredFood(boolean food) {
+        gatheredFood = food;
+        hasChanged = true;
+    }
 
     public synchronized boolean getGatheredFood() { return gatheredFood; }
 

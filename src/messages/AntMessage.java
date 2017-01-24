@@ -8,7 +8,7 @@ public class AntMessage {
     private Actions type;
     private int color;
     private boolean leavePheromones = false;
-    private boolean queen = false;
+    private boolean isQueen = false;
 
 
     public Actions getType() {
@@ -35,7 +35,7 @@ public class AntMessage {
         this.leavePheromones = leavePheromones;
     }
 
-    public boolean getQueen() { return queen; }
+    public boolean isQueen() { return isQueen; }
 
-    public void setQueen(boolean queen) { this.queen = queen; }
+    public void setIsQueen(boolean isQueen) { this.isQueen = isQueen; }
 }

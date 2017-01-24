@@ -21,10 +21,10 @@ public class AntMessageCreator {
      * @param color
      *      Ant color
      */
-    public AntMessageCreator(int color, boolean queen) {
+    public AntMessageCreator(int color, boolean isQueen) {
         AntMessage msg = new AntMessage();
         msg.setColor(color);
-        msg.setQueen(queen);
+        msg.setIsQueen(isQueen);
 
         LOGIN = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_LOGIN);
         UP = MessageUtil.asJsonAntMessage(msg, Actions.ANT_ACTION_UP);

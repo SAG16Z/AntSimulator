@@ -19,7 +19,6 @@ public class CellMessage {
     private int food;
     private int material;
     private int color;
-    private int smell;
     private String[] ants;
 
     public int getX() {
@@ -123,12 +122,6 @@ public class CellMessage {
     }
 
     public void setColor(int color) { this.color = color; }
-
-    public int getSmell() {
-        return smell;
-    }
-
-    public void setSmell(int smell) { this.smell = smell; }
 
     public String[] getAnts() {
         return ants;

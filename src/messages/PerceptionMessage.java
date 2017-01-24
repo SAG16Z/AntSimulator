@@ -15,7 +15,7 @@ public class PerceptionMessage {
     private Actions lastAction;
     private CellMessage cell;
     private String replyId;
-    private boolean queen = false;
+    private boolean isQueen = false;
     private float foodToMaterialRatio;
     private AntRole role;
 
@@ -77,14 +77,6 @@ public class PerceptionMessage {
         this.lastAction = lastAction;
     }
 
-    public String getReplyId() {
-        return replyId;
-    }
-
-    public void setReplyId(String replyId) {
-        this.replyId = replyId;
-    }
-
     public int getTotalFood() {
         return totalFood;
     }
@@ -101,9 +93,9 @@ public class PerceptionMessage {
         this.cell = cell;
     }
 
-    public boolean isQueen() { return queen; }
+    public boolean isQueen() { return isQueen; }
 
-    public void setQueen(boolean queen) { this.queen = queen; }
+    public void setIsQueen(boolean isQueen) { this.isQueen = isQueen; }
 
     public void setFoodToMaterialRatio(float ratio) { this.foodToMaterialRatio = ratio; }
 

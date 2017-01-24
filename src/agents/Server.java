@@ -90,7 +90,7 @@ public class Server extends Agent {
         Object args[] = new Object[2];
         args[0] = creator;
         args[1] = role;
-        AgentController ac = getContainerController().createNewAgent(role.getName() + ant + "_" + team, Ant.class.getCanonicalName(), args);
+        AgentController ac = getContainerController().createNewAgent(role.name() + ant + "_" + team, Ant.class.getCanonicalName(), args);
         ac.start();
     }
 
@@ -215,7 +215,7 @@ public class Server extends Agent {
             // don't create zombies!
             pm.setState("ALIVE");
             pm.setColor(ant.getColor());
-            pm.setQueen(ant.getQueen());
+            pm.setIsQueen(ant.isQueen());
             pm.setCurrentFood(0);
             pm.setFoodToMaterialRatio((float)nest.getFood() / (float)nest.getMaterial());
             if(pm.getFoodToMaterialRatio() > 0.5)
