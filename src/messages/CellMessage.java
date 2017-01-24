@@ -8,17 +8,17 @@ public class CellMessage {
     private int x;
     private int y;
     private CellType type;
-    private Actions upGradient;
-    private float gradientValue;
-    private Actions downGradient;
-    private Actions upEnemyGradient;
-    private Actions downEnemyGradient;
-    private float gradientTotalValue;
-    //private float enemyGradient;
-    private Actions downPheromones;
     private int food;
     private int material;
     private int color;
+    private float gradientTotalValue;
+    private float gradientValue;
+    private Actions upGradient;
+    private Actions downGradient;
+    private Actions upEnemyGradient;
+    private Actions downEnemyGradient;
+    //private float enemyGradient;
+    private Actions downPheromones;
     private String[] ants;
 
     public int getX() {
@@ -49,16 +49,16 @@ public class CellMessage {
         return upGradient;
     }
 
-    public void setGradientTotalValue(float gradientTotalValue) {
-        this.gradientTotalValue = gradientTotalValue;
+    public void setUpGradient(Actions upGradient) {
+        this.upGradient = upGradient;
     }
 
     public float getGradientTotalValue() {
         return gradientTotalValue;
     }
 
-    public void setGradientValue(float gradientValue) {
-        this.gradientValue = gradientValue;
+    public void setGradientTotalValue(float gradientTotalValue) {
+        this.gradientTotalValue = gradientTotalValue;
     }
 
     public float getGradientValue() {
@@ -71,23 +71,29 @@ public class CellMessage {
         return enemyGradient;
     }*/
 
-    public void setUpGradient(Actions upGradient) {
-        this.upGradient = upGradient;
+    public void setGradientValue(float gradientValue) {
+        this.gradientValue = gradientValue;
     }
 
-    public Actions getDownGradient() { return downGradient; }
+    public Actions getDownGradient() {
+        return downGradient;
+    }
 
     public void setDownGradient(Actions downGradient) {
         this.downGradient = downGradient;
     }
 
-    public Actions getUpEnemyGradient() { return upEnemyGradient; }
+    public Actions getUpEnemyGradient() {
+        return upEnemyGradient;
+    }
 
     public void setUpEnemyGradient(Actions upGradient) {
         this.upEnemyGradient = upGradient;
     }
 
-    public Actions getDownEnemyGradient() { return downEnemyGradient; }
+    public Actions getDownEnemyGradient() {
+        return downEnemyGradient;
+    }
 
     public void setDownEnemyGradient(Actions downGradient) {
         this.downEnemyGradient = downGradient;
@@ -121,7 +127,9 @@ public class CellMessage {
         return color;
     }
 
-    public void setColor(int color) { this.color = color; }
+    public void setColor(int color) {
+        this.color = color;
+    }
 
     public String[] getAnts() {
         return ants;

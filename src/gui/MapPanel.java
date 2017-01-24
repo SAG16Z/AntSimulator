@@ -20,8 +20,9 @@ import java.util.Random;
 
 public class MapPanel extends JPanel {
     private BufferedImage canvas;
-    public static final int CELL_H = 200;
-    public static final int CELL_V = 200;
+    private static final int CELL_H = 200;
+    private static final int CELL_V = 200;
+    private static final int SPAWN_AREA = 5;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
     private static float MAX_GRADIENT = 50.0f;
     private static final Logger LOG = LoggerFactory.getLogger(MapPanel.class);
@@ -42,6 +43,10 @@ public class MapPanel extends JPanel {
     }
 
     public void setAntHill(int a, int b, int antColor) {
+        a = Math.max(a, Anthill.MAX_SIZE/2);
+        b = Math.max(b, Anthill.MAX_SIZE/2);
+        a = Math.min(a, CELL_H - Anthill.MAX_SIZE - 1);
+        b = Math.min(b, CELL_V - Anthill.MAX_SIZE - 1);
         Anthill anthill = new Anthill(antColor, new Point(a, b));
         anthills.put(antColor, anthill);
         float gradient;
@@ -57,6 +62,12 @@ public class MapPanel extends JPanel {
                 }
             }
         }
+    }
+
+    public void setRandomAntHill(int rgb) {
+        int a = Anthill.MAX_SIZE / 2 + new Random().nextInt(CELL_H - Anthill.MAX_SIZE - 1);
+        int b = Anthill.MAX_SIZE / 2 + new Random().nextInt(CELL_V - Anthill.MAX_SIZE - 1);
+        setAntHill(a, b, rgb);
     }
 
     @Override
@@ -131,9 +142,28 @@ public class MapPanel extends JPanel {
     }
 
     public Actions getDownPheromones(WorldCell cell, int color){
+        float pheromones = Integer.MAX_VALUE;
         Actions action = null;
-        if(isValidPosition(cell.getPosition()) && getPheromones(cell.getPosition(), color) > 0) {
-            return getDownGradient(cell, color);
+        if(isValidPosition(cell.getPosition())) {
+            Point adjacent = cell.getPosition().left();
+            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0 && getPheromones(adjacent, color) <= pheromones) {
+                pheromones = getPheromones(adjacent, color) ;
+                action = Actions.ANT_ACTION_LEFT;
+            }
+            adjacent = cell.getPosition().right();
+            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0 && getPheromones(adjacent, color) <= pheromones) {
+                pheromones = getPheromones(adjacent, color) ;
+                action = Actions.ANT_ACTION_RIGHT;
+            }
+            adjacent = cell.getPosition().down();
+            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0 && getPheromones(adjacent, color) <= pheromones) {
+                pheromones = getPheromones(adjacent, color) ;
+                action = Actions.ANT_ACTION_DOWN;
+            }
+            adjacent = cell.getPosition().up();
+            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0 && getPheromones(adjacent, color) <= pheromones) {
+                action = Actions.ANT_ACTION_UP;
+            }
         }
         LOG.debug("Server sends downPheromones action to {}", action);
         return action;
@@ -148,11 +178,52 @@ public class MapPanel extends JPanel {
     }
 
     public synchronized void removeAnt(AID sender) {
+        int x = antPerception.get(sender).getCell().getX();
+        int y = antPerception.get(sender).getCell().getX();
+        getWorldMap()[x][y].removeAnt(antPerception.get(sender));
         antPerception.remove(sender);
     }
 
     public Anthill getAnthill(int col) { return anthills.get(col); }
 
+    public boolean areEnemiesNearby(Point position, int color){
+        for(Point p : position.allAdjacent()){
+            if(isValidPosition(p)){
+                if(worldMap[p.x][p.y].areEnemiesPresent(color))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    public void killEnemiesNearby(Point position, int color) {
+        for(Point p : position.allAdjacent()){
+            if(isValidPosition(p)){
+                worldMap[p.x][p.y].killEnemies(color);
+            }
+        }
+    }
+
+    public Point getRandomSpawnPosition(int color) {
+        Random r = new Random();
+        Anthill nest = getAnthill(color);
+        int x = nest.getPosition().x - SPAWN_AREA + r.nextInt(2 * SPAWN_AREA);
+        int y = nest.getPosition().y - SPAWN_AREA + r.nextInt(2 * SPAWN_AREA);
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+        if (x >= CELL_H) x = CELL_H - 1;
+        if (y >= CELL_V) y = CELL_V - 1;
+        return new Point(x, y);
+    }
+
+    public float getFoodToMaterialRatio(int color) {
+        return getAnthill(color).getFoodToMaterialRatio();
+    }
+
+    public void moveAnt(PerceptionMessage pm, Point position, Point newPosition) {
+        worldMap[position.x][position.y].removeAnt(pm);
+        worldMap[newPosition.x][newPosition.y].setAnt(pm);
+    }
 
 }
 

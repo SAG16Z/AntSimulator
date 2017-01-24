@@ -21,7 +21,7 @@ public class Anthill {
     private Direction foodDir = Direction.LEFT;
     private int foodCnt = 1;
     private int foodSize = 1;
-    private static int FOOD_FOR_QUEEN = 100;
+    private static int FOOD_FOR_QUEEN = 10;
     private Vector<Point> foodPoints = new Vector<Point>();
     private Vector<Point> foodHoles = new Vector<Point>();
     //private Vector<Point> materialPoints = new Vector<Point>();
@@ -165,6 +165,10 @@ public class Anthill {
         Vector<Point> foodToRemove = new Vector<Point>(list);
         list.clear();
         return foodToRemove;
+    }
+
+    public float getFoodToMaterialRatio() {
+        return (float) food / (float) material;
     }
 
     /*public synchronized Vector<Point> consumeMaterial() {

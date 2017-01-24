@@ -1,35 +1,22 @@
 package messages;
 
 import enums.Actions;
-import enums.AntRole;
 
 public class PerceptionMessage {
 
-    private String name;
     private String state; // DOA
     private int color;
     private int currentFood;
     private int currentMaterial;
-    private int totalFood;
+    private float foodToMaterialRatio;
     private boolean enemiesNearby;
+    private boolean isQueen;
+
     private Actions lastAction;
     private CellMessage cell;
-    private String replyId;
-    private boolean isQueen = false;
-    private float foodToMaterialRatio;
-    private AntRole role;
-
 
 
     // getters and setters ...
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getState() {
         return state;
@@ -77,14 +64,6 @@ public class PerceptionMessage {
         this.lastAction = lastAction;
     }
 
-    public int getTotalFood() {
-        return totalFood;
-    }
-
-    public void setTotalFood(int totalFood) {
-        this.totalFood = totalFood;
-    }
-
     public CellMessage getCell() {
         return cell;
     }
@@ -100,8 +79,4 @@ public class PerceptionMessage {
     public void setFoodToMaterialRatio(float ratio) { this.foodToMaterialRatio = ratio; }
 
     public float getFoodToMaterialRatio() { return foodToMaterialRatio; }
-
-    public void setRole(AntRole role) { this.role = role; }
-
-    public AntRole getRole() { return role; }
 }

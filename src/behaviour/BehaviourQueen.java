@@ -25,14 +25,8 @@ public class BehaviourQueen extends Behaviour {
 
         if(currentPerception.getCell().getGradientTotalValue() <= 0.001f)
         {
-            int x = currentPerception.getCell().getX();
-            int y = currentPerception.getCell().getY();
-
-            if(x > Anthill.INIT_SIZE && x < MapPanel.CELL_H - Anthill.INIT_SIZE)
-                if(y > Anthill.INIT_SIZE && y < MapPanel.CELL_V - Anthill.INIT_SIZE) {
-                    ant.sendReply(Actions.ANT_ACTION_NEST);
-                    return;
-                }
+            ant.sendReply(Actions.ANT_ACTION_NEST);
+            return;
         }
 
         LOG.trace("{} Move randomly", ant.getLocalName());

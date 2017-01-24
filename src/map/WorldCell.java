@@ -2,6 +2,7 @@ package map;
 
 import enums.Actions;
 import enums.CellType;
+import gui.MapPanel;
 import messages.PerceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ public class WorldCell {
     private CellType type;
     private int food = 0;
     private int material = 0;
-    private boolean gatheredFood = false;
+    private boolean isFood = false;
     private boolean hasChanged = true;
 
 
@@ -62,7 +63,7 @@ public class WorldCell {
             g.setColor(new Color(0.0f, 0.0f, 1.0f, (float) material / MAX_MATERIAL));
             g.fillRect(position.x * w, position.y * h, w, h);
 
-            if (gatheredFood) {
+            if (isFood) {
                 g.setColor(Color.red);
                 g.fillRect(position.x * w, position.y * h, w, h);
             }
@@ -232,17 +233,35 @@ public class WorldCell {
         hasChanged = true;
     }
 
-    public synchronized void setGatheredFood(boolean food) {
-        gatheredFood = food;
+    public synchronized void setisGatheredFood(boolean isFood) {
+        this.isFood = isFood;
         hasChanged = true;
     }
 
-    public synchronized boolean getGatheredFood() { return gatheredFood; }
+    public synchronized boolean getisGatheredFood() { return isFood; }
 
     public synchronized int getMaxGradientCol() { return maxGradientColors[0]; }
 
     public boolean hasChanged() {
         return hasChanged || getAllPheromones() > 0;
+    }
+
+    public boolean areEnemiesPresent(int color) {
+        for (PerceptionMessage ant : getAnts()) {
+            if (ant.getColor() != color) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void killEnemies(int color) {
+        for (PerceptionMessage ant : getAnts()) {
+            if (ant.getColor() != color) {
+                ant.setState("DEAD");
+                removeAnt(ant);
+            }
+        }
     }
 }
 

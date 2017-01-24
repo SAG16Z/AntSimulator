@@ -96,8 +96,16 @@ public class Ant extends Agent {
         addBehaviour(new TickerBehaviour(this, 40){
             @Override
             public void onTick() {
-                if(currentPerception != null && behaviour.getRole() != currentPerception.getRole())
-                    setRole(currentPerception.getRole());
+                if(currentPerception != null &&
+                        currentPerception.getCell().getType() == CellType.START &&
+                        (behaviour.getRole() == AntRole.BUILDER || behaviour.getRole() == AntRole.WORKER)) {
+
+                    LOG.debug("{} food to material ratio", currentPerception.getFoodToMaterialRatio());
+                    if (currentPerception.getFoodToMaterialRatio() > 0.5)
+                        setRole(AntRole.BUILDER);
+                    else
+                        setRole(AntRole.WORKER);
+                }
                 LOG.debug("{} decides next action", getLocalName());
                 behaviour.decideNextAction(Ant.this, reply, currentPerception, getLocalName(), currentPos);
             }
@@ -105,6 +113,8 @@ public class Ant extends Agent {
     }
 
     private void setRole(AntRole role) {
+        if(behaviour != null && role == behaviour.getRole())
+            return;
         switch(role)
         {
             case WORKER:
@@ -113,14 +123,14 @@ public class Ant extends Agent {
             case BUILDER:
                 behaviour = new BehaviourBuilder();
                 break;
+            case THIEF:
+                behaviour = new BehaviourThief();
+                break;
             case WARRIOR:
                 behaviour = new BehaviourWarrior();
                 break;
             case QUEEN:
                 behaviour = new BehaviourQueen();
-                break;
-            case THIEF:
-                behaviour = new BehaviourThief();
                 break;
         }
         LOG.debug("{} switched role to {}", getLocalName(), role);

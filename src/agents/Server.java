@@ -38,9 +38,8 @@ import java.util.Vector;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 4;
+    private static final int ANT_CNT = 10;
     private static final int TEAM_CNT = 1;
-    public static final int SPAWN_AREA = 5;
     private static final float WORKER_PROB = 0.5f;
     //private static final float QUEEN_PROB = 0.1f;
     //private static final float BUILDER_PROB = 0.5f;
@@ -77,9 +76,8 @@ public class Server extends Agent {
         addBehaviour(new ReceiveMessageBehaviour(mtAWRequest, this::onAWRequest));
 
         for (int i = 0; i < TEAM_CNT; i++) {
-            int a = Anthill.INIT_SIZE / 2 + new Random().nextInt(MapPanel.CELL_H - Anthill.INIT_SIZE - 1);
-            int b = Anthill.INIT_SIZE / 2 + new Random().nextInt(MapPanel.CELL_V - Anthill.INIT_SIZE - 1);
-            setAntHill(a, b, i);
+            mapPanel.setRandomAntHill(teamCols[i].getRGB());
+            spawnAnts(i);
         }
         gui.repaint();
     }
@@ -92,8 +90,7 @@ public class Server extends Agent {
         ac.start();
     }
 
-    private void setAntHill(int a, int b, int antTeam) {
-        mapPanel.setAntHill(a, b, teamCols[antTeam].getRGB());
+    private void spawnAnts(int antTeam) {
         try {
             for (int i = 0; i < ANT_CNT; i++) {
                 AntMessageCreator c = new AntMessageCreator(teamCols[antTeam].getRGB(), false);
@@ -203,7 +200,7 @@ public class Server extends Agent {
             } else if (action == Actions.ANT_ACTION_COLLECT_MATERIAL) {
                 replyType = sendMaterialCollectedReply(senderID, ant, pm);
             } else if (action == Actions.ANT_ACTION_DROP_FOOD) {
-                replyType = sendDropFcoodReply(senderID, ant, pm);
+                replyType = sendDropFoodReply(senderID, ant, pm);
             } else if (action == Actions.ANT_ACTION_DROP_MATERIAL) {
                 replyType = sendDropMaterialReply(senderID, ant, pm);
             } else if (action == Actions.ANT_ACTION_STEAL) {
@@ -224,16 +221,8 @@ public class Server extends Agent {
         int replyType = ACLMessage.INFORM;
         int x = pm.getCell().getX();
         int y = pm.getCell().getY();
-        for (int i = x - 2; i < x + 2; i++)
-            for (int j = y - 2; j < y + 2; j++)
-                if (i >= 0 && i < MapPanel.CELL_H)
-                    if (j >= 0 && j < MapPanel.CELL_V) {
-                        for (PerceptionMessage toBeKilled : mapPanel.getWorldMap()[i][j].getAnts()) {
-                            if (toBeKilled.getColor() != pm.getColor()) {
-                                toBeKilled.setState("DEAD");
-                            }
-                        }
-                    }
+        mapPanel.killEnemiesNearby(new Point(x, y), ant.getColor());
+        updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
         return replyType;
     }
 
@@ -241,10 +230,9 @@ public class Server extends Agent {
         int replyType = ACLMessage.REFUSE; //to kill the ant
         pm.setState("DEAD");
         mapPanel.removeAnt(senderID);
-        mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()].removeAnt(pm);
-
         if (currentTeams + 1 <= teamCols.length) {
-            setAntHill(pm.getCell().getX(), pm.getCell().getY(), currentTeams);
+            mapPanel.setAntHill(pm.getCell().getX(), pm.getCell().getY(), teamCols[currentTeams].getRGB());
+            spawnAnts(currentTeams);
             currentTeams++;
         }
         return replyType;
@@ -254,51 +242,35 @@ public class Server extends Agent {
         int replyType = ACLMessage.INFORM;
         int x = pm.getCell().getX();
         int y = pm.getCell().getY();
-        if (mapPanel.getWorldMap()[x][y].getGatheredFood()) {
-            pm.setCurrentFood(1);
-            pm.getCell().setFood(1);
-            mapPanel.getWorldMap()[x][y].setGatheredFood(false);
-        } else if (mapPanel.getWorldMap()[x][y].getType() == CellType.START) {
-            pm.setCurrentMaterial(1);
-            pm.getCell().setMaterial(1);
-            mapPanel.getWorldMap()[x][y].setType(CellType.FREE);
-        }
+//        if (mapPanel.getWorldMap()[x][y].getisGatheredFood()) {
+//            pm.setCurrentFood(1);
+//            mapPanel.getWorldMap()[x][y].setisGatheredFood(false);
+//        } else if (mapPanel.getWorldMap()[x][y].getType() == CellType.START) {
+//            pm.setCurrentMaterial(1);
+//        }
+        updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
         return replyType;
     }
 
     private int sendDropMaterialReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
-        int replyType = ACLMessage.INFORM;
-
-        pm.setCurrentMaterial(0);
-
         Anthill nest = mapPanel.getAnthill(pm.getColor());
         Point point = nest.getNextPoint();
-        mapPanel.getWorldMap()[point.x][point.y].setType(CellType.START);
+        // mapPanel.getWorldMap()[point.x][point.y].setType(CellType.START);
+        pm.setCurrentMaterial(0);
         nest.setNextPoint();
-
-        pm.setFoodToMaterialRatio((float) nest.getFood() / (float) nest.getMaterial());
-        if (pm.getFoodToMaterialRatio() > 0.5)
-            pm.setRole(AntRole.BUILDER);
-        else
-            pm.setRole(AntRole.WORKER);
-        return replyType;
+        pm.setFoodToMaterialRatio(nest.getFoodToMaterialRatio());
+        updateCellPerceptionMessage(mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()], pm);
+        return ACLMessage.INFORM;
     }
 
-    private int sendDropFcoodReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
-        int replyType = ACLMessage.INFORM;
-        pm.setCurrentFood(0);
+    private int sendDropFoodReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
         Anthill nest = mapPanel.getAnthill(pm.getColor());
         if (nest.canPlaceFood()) {
+            pm.setCurrentFood(0);
             //Point point = nest.getNextFood();
             Point point = nest.setNextFood();
-            mapPanel.getWorldMap()[point.x][point.y].setGatheredFood(true);
-
-            pm.setFoodToMaterialRatio((float) nest.getFood() / (float) nest.getMaterial());
-            if (pm.getFoodToMaterialRatio() > 0.5)
-                pm.setRole(AntRole.BUILDER);
-            else
-                pm.setRole(AntRole.WORKER);
-
+            mapPanel.getWorldMap()[point.x][point.y].setisGatheredFood(true);
+            pm.setFoodToMaterialRatio(nest.getFoodToMaterialRatio());
             if (nest.canCreateQueen()) {
                 try {
                     AntMessageCreator c = new AntMessageCreator(pm.getColor(), true);
@@ -306,7 +278,7 @@ public class Server extends Agent {
                     queensCnt++;
                     Vector<Point> foodToRemove = nest.consumeFood();
                     for (Point p : foodToRemove) {
-                        mapPanel.getWorldMap()[p.x][p.y].setGatheredFood(false);
+                        mapPanel.getWorldMap()[p.x][p.y].setisGatheredFood(false);
                     }
                             /*Vector<Point> materialToRemove = nest.consumeMaterial();
                             for(Point p : materialToRemove) {
@@ -317,7 +289,8 @@ public class Server extends Agent {
                 }
             }
         }
-        return replyType;
+        updateCellPerceptionMessage(mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()], pm);
+        return ACLMessage.INFORM;
     }
 
     private int sendMaterialCollectedReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
@@ -326,8 +299,8 @@ public class Server extends Agent {
         int y = pm.getCell().getY();
         if (mapPanel.getWorldMap()[x][y].getMaterial() > 0) {
             pm.setCurrentMaterial(mapPanel.getWorldMap()[x][y].consumeMaterial());
-            pm.getCell().setMaterial(mapPanel.getWorldMap()[x][y].getMaterial());
         }
+        updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
         return replyType;
     }
 
@@ -337,76 +310,49 @@ public class Server extends Agent {
         int y = pm.getCell().getY();
         if (mapPanel.getWorldMap()[x][y].getFood() > 0) {
             pm.setCurrentFood(mapPanel.getWorldMap()[x][y].consumeFood());
-            pm.getCell().setFood(mapPanel.getWorldMap()[x][y].getFood());
         }
+        updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
         return replyType;
     }
 
     private int sendMoveReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
-        int replyType = ACLMessage.INFORM;
         Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
         if (ant.isLeavePheromones()) {
             mapPanel.getWorldMap()[position.x][position.y].addPheromones(ant.getColor());
         }
-        // try move ant
-        Point newPosition = null;
-        if (ant.getType() == Actions.ANT_ACTION_DOWN)
-            newPosition = position.down();
-        else if (ant.getType() == Actions.ANT_ACTION_LEFT)
-            newPosition = position.left();
-        else if (ant.getType() == Actions.ANT_ACTION_RIGHT)
-            newPosition = position.right();
-        else if (ant.getType() == Actions.ANT_ACTION_UP)
-            newPosition = position.up();
-
+        // try to move ant
+        Point newPosition = position.adjacent(ant.getType());
         if (newPosition != null && mapPanel.isValidPosition(newPosition)) {
             // ant can perform move
-            // remove ant from cell
-            mapPanel.getWorldMap()[position.x][position.y].removeAnt(pm);
-            // put ant on new cell
-            WorldCell newcell = mapPanel.getWorldMap()[newPosition.x][newPosition.y];
-            newcell.setAnt(pm);
-            //update perception
-            updateCellPerceptionMessage(newcell, pm);
+            mapPanel.moveAnt(pm, position, newPosition);
+            updateCellPerceptionMessage(mapPanel.getWorldMap()[newPosition.x][newPosition.y], pm);
         } else {
-            replyType = ACLMessage.REFUSE;
+            return ACLMessage.REFUSE;
         }
-        return replyType;
+        return ACLMessage.INFORM;
     }
 
     private int sendRefuseAndRemove(AID senderID, AntMessage ant, PerceptionMessage pm) {
         Point p = new Point(pm.getCell().getX(), pm.getCell().getY());
         LOG.info("Killed at {} {}.", p.x, p.y);
-        int replyType = ACLMessage.REFUSE;
         mapPanel.removeAnt(senderID);
-        mapPanel.getWorldMap()[p.x][p.y].removeAnt(pm);
-        return replyType;
+        return ACLMessage.REFUSE;
     }
 
     private int sendLoginReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
         LOG.debug("Ant logs in: {}, {}", ant.getColor(), senderID);
-        int replyType = ACLMessage.INFORM;
-        Random r = new Random();
-        Anthill nest = mapPanel.getAnthill(ant.getColor());
-        int x = nest.getPosition().x - SPAWN_AREA + r.nextInt(2 * SPAWN_AREA);
-        int y = nest.getPosition().y - SPAWN_AREA + r.nextInt(2 * SPAWN_AREA);
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
-        if (x >= MapPanel.CELL_H) x = MapPanel.CELL_H - 1;
-        if (y >= MapPanel.CELL_V) y = MapPanel.CELL_V - 1;
+        Point newPosition = mapPanel.getRandomSpawnPosition(ant.getColor());
         // don't create zombies!
         pm.setState("ALIVE");
         pm.setColor(ant.getColor());
-        pm.setIsQueen(ant.isQueen());
         pm.setCurrentFood(0);
-        pm.setFoodToMaterialRatio((float) nest.getFood() / (float) nest.getMaterial());
-        if (pm.getFoodToMaterialRatio() > 0.5)
-            pm.setRole(AntRole.BUILDER);
-        else
-            pm.setRole(AntRole.WORKER);
-        updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
+        pm.setCurrentMaterial(0);
+        pm.setFoodToMaterialRatio(mapPanel.getFoodToMaterialRatio(ant.getColor()));
+        pm.setEnemiesNearby(mapPanel.areEnemiesNearby(newPosition, ant.getColor()));
+        pm.setIsQueen(ant.isQueen());
+        updateCellPerceptionMessage(mapPanel.getWorldMap()[newPosition.x][newPosition.y], pm);
         mapPanel.putAnt(senderID, pm);
-        return replyType;
+        return ACLMessage.INFORM;
     }
 
     /**
@@ -456,19 +402,6 @@ public class Server extends Agent {
         cm.setDownEnemyGradient(mapPanel.getDownEnemyGradient(cell, pm.getColor()));
         cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
         pm.setCell(cm);
-
-        boolean enemies = false;
-        for (int i = x - 2; i < x + 2; i++)
-            for (int j = y - 2; j < y + 2; j++)
-                if (i >= 0 && i < MapPanel.CELL_H)
-                    if (j >= 0 && j < MapPanel.CELL_V) {
-                        for (PerceptionMessage toBeKilled : mapPanel.getWorldMap()[i][j].getAnts()) {
-                            if (toBeKilled.getColor() != pm.getColor()) {
-                                enemies = true;
-                            }
-                        }
-                    }
-        pm.setEnemiesNearby(enemies);
     }
 
 }
