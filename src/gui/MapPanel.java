@@ -144,27 +144,50 @@ public class MapPanel extends JPanel {
     }
 
     public Actions getDownPheromones(WorldCell cell, int color){
-        float pheromones = Integer.MAX_VALUE;
         Actions action = null;
+        float maxPheromones = Float.MAX_VALUE;
+        float minPheromones = 0;
+        Map<Float, Actions> map = new HashMap<>();
         if(isValidPosition(cell.getPosition())) {
             Point adjacent = cell.getPosition().left();
-            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0 && getPheromones(adjacent, color) <= pheromones) {
-                pheromones = getPheromones(adjacent, color) ;
-                action = Actions.ANT_ACTION_LEFT;
+            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0) {
+                map.put(getPheromones(adjacent, color), Actions.ANT_ACTION_LEFT);
             }
             adjacent = cell.getPosition().right();
-            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0 && getPheromones(adjacent, color) <= pheromones) {
-                pheromones = getPheromones(adjacent, color) ;
-                action = Actions.ANT_ACTION_RIGHT;
+            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0) {
+                map.put(getPheromones(adjacent, color), Actions.ANT_ACTION_RIGHT);
             }
             adjacent = cell.getPosition().down();
-            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0 && getPheromones(adjacent, color) <= pheromones) {
-                pheromones = getPheromones(adjacent, color) ;
-                action = Actions.ANT_ACTION_DOWN;
+            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0) {
+                map.put(getPheromones(adjacent, color), Actions.ANT_ACTION_DOWN);
             }
             adjacent = cell.getPosition().up();
-            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0 && getPheromones(adjacent, color) <= pheromones) {
-                action = Actions.ANT_ACTION_UP;
+            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0) {
+                map.put(getPheromones(adjacent, color), Actions.ANT_ACTION_UP);
+            }
+        }
+        if(map.size() > 0) {
+            if (cell.getType() == CellType.START) {
+                // go max adjacent pheromone gradient
+                for (Float val : map.keySet())
+                    if (val > minPheromones) {
+                        minPheromones = val;
+                        action = map.get(val);
+                    }
+            }
+            else {
+                // go down pheromone gradient
+                if (map.size() == 1) {
+                    // if at the end of trail
+                    getDownGradient(cell, color);
+                } else {
+                    // choose lower value pheromone
+                    for (Float val : map.keySet())
+                        if (val < maxPheromones) {
+                            maxPheromones = val;
+                            action = map.get(val);
+                        }
+                }
             }
         }
         LOG.debug("Server sends downPheromones action to {}", action);
