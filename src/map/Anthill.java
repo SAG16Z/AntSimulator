@@ -153,13 +153,13 @@ public class Anthill {
         }
     }
 
-    private synchronized boolean canPlaceFood() {
+    private boolean canPlaceFood() {
         return (material > food);
     }
 
-    public synchronized boolean canCreateQueen() { return (food >= FOOD_FOR_QUEEN); }
+    public boolean canCreateQueen() { return (food >= FOOD_FOR_QUEEN); }
 
-    public synchronized Vector<Point> consumeFood() {
+    public Vector<Point> consumeFood() {
         food -= FOOD_FOR_QUEEN;
         List<Point> list = foodPoints.subList(foodPoints.size()-FOOD_FOR_QUEEN, foodPoints.size());
         foodHoles.addAll(list);
@@ -169,15 +169,32 @@ public class Anthill {
     }
 
     public float getFoodToMaterialRatio() {
+        if(material == 0) return 0;
         return (float) food / (float) material;
     }
 
-    /*public synchronized Vector<Point> consumeMaterial() {
-        material -= FOOD_FOR_QUEEN;
-        List<Point> list = materialPoints.subList(materialPoints.size()-FOOD_FOR_QUEEN, materialPoints.size());
-        holes.addAll(list);
-        Vector<Point> materialToRemove = new Vector<Point>(list);
-        list.clear();
-        return materialToRemove;
-    }*/
+    public Vector<Point>  stealFood() {
+        if(food > 0){
+            food -= 1;
+            List<Point> list = foodPoints.subList(foodPoints.size()-1, foodPoints.size());
+            foodHoles.addAll(list);
+            Vector<Point> foodToRemove = new Vector<>(list);
+            list.clear();
+            return foodToRemove;
+        }
+        else
+            return null;
+    }
+
+    public int stealMaterial() {
+        if(material > 0){
+            material -= 1;
+//            List<Point> list = materialPoints.subList(materialPoints.size()-1, materialPoints.size());
+//            materialHoles.addAll(list);
+            return 1;
+        }
+        else
+            return 0;
+    }
+
 }

@@ -221,7 +221,9 @@ public class Server extends Agent {
         int replyType = ACLMessage.INFORM;
         int x = pm.getCell().getX();
         int y = pm.getCell().getY();
+        LOG.info("Killing enemies at {} {}.", x, y);
         mapPanel.killEnemiesNearby(new Point(x, y), ant.getColor());
+        pm.setEnemiesNearby(mapPanel.areEnemiesNearby(new Point(x, y), ant.getColor()));
         updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
         return replyType;
     }
@@ -242,12 +244,16 @@ public class Server extends Agent {
         int replyType = ACLMessage.INFORM;
         int x = pm.getCell().getX();
         int y = pm.getCell().getY();
-//        if (mapPanel.getWorldMap()[x][y].getisGatheredFood()) {
-//            pm.setCurrentFood(1);
-//            mapPanel.getWorldMap()[x][y].setisGatheredFood(false);
-//        } else if (mapPanel.getWorldMap()[x][y].getType() == CellType.START) {
-//            pm.setCurrentMaterial(1);
-//        }
+        Anthill nest = mapPanel.getAnthill(new Point(x, y));
+        Vector<Point> stolenFoodPositions = nest.stealFood();
+        if (stolenFoodPositions != null) {
+            pm.setCurrentFood(1);
+            for (Point p : stolenFoodPositions) {
+                mapPanel.getWorldMap()[p.x][p.y].setIsAnthillFood(false);
+            }
+        } else{
+            pm.setCurrentMaterial(nest.stealMaterial());
+        }
         updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
         return replyType;
     }
@@ -314,13 +320,14 @@ public class Server extends Agent {
 
     private int sendMoveReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
         Point position = new Point(pm.getCell().getX(), pm.getCell().getY());
+        pm.setEnemiesNearby(mapPanel.areEnemiesNearby(position, ant.getColor()));
         if (ant.isLeavePheromones()) {
             mapPanel.getWorldMap()[position.x][position.y].addPheromones(ant.getColor());
         }
         // try to move ant
         Point newPosition = position.adjacent(ant.getType());
         if (newPosition != null && mapPanel.isValidPosition(newPosition)) {
-            // ant can perform move
+            // ant can perform move;
             mapPanel.moveAnt(pm, position, newPosition);
             updateCellPerceptionMessage(mapPanel.getWorldMap()[newPosition.x][newPosition.y], pm);
         } else {

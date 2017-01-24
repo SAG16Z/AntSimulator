@@ -34,7 +34,7 @@ public class BehaviourThief extends Behaviour {
 
             // found enemy nest -> steal
             if (cell.getType() == CellType.START && cell.getColor() != currentPerception.getColor()) {
-                LOG.debug("{} stealing food at {}", ant.getLocalName(), currentPos);
+                LOG.debug("{} stealing food or material at {}", ant.getLocalName(), currentPos);
                 ant.sendReply(Actions.ANT_ACTION_STEAL, false);
                 return;
             }

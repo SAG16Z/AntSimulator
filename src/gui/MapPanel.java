@@ -1,5 +1,6 @@
 package gui;
 
+import agents.Ant;
 import enums.Actions;
 import enums.CellType;
 import jade.core.AID;
@@ -7,6 +8,7 @@ import map.Anthill;
 import map.WorldCell;
 import map.Point;
 import messages.PerceptionMessage;
+import org.omg.CORBA.PUBLIC_MEMBER;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +22,8 @@ import java.util.Random;
 
 public class MapPanel extends JPanel {
     private BufferedImage canvas;
-    private static final int CELL_H = 200;
-    private static final int CELL_V = 200;
+    private static final int CELL_H = 100;
+    private static final int CELL_V = 100;
     private static final int SPAWN_AREA = 5;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
     private static float MAX_GRADIENT = 50.0f;
@@ -171,6 +173,7 @@ public class MapPanel extends JPanel {
 
     public synchronized void putAnt(AID sender, PerceptionMessage pm) {
         antPerception.put(sender, pm);
+        worldMap[pm.getCell().getX()][pm.getCell().getY()].setAnt(pm);
     }
 
     public PerceptionMessage getAnt(AID sender) {
@@ -179,12 +182,14 @@ public class MapPanel extends JPanel {
 
     public synchronized void removeAnt(AID sender) {
         int x = antPerception.get(sender).getCell().getX();
-        int y = antPerception.get(sender).getCell().getX();
+        int y = antPerception.get(sender).getCell().getY();
         getWorldMap()[x][y].removeAnt(antPerception.get(sender));
         antPerception.remove(sender);
     }
 
     public Anthill getAnthill(int col) { return anthills.get(col); }
+
+    public Anthill getAnthill(Point p) { return anthills.get(worldMap[p.x][p.y].getMaxGradientCol()); }
 
     public boolean areEnemiesNearby(Point position, int color){
         for(Point p : position.allAdjacent()){

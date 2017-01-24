@@ -116,7 +116,9 @@ public class WorldCell {
     }
 
     public void removeAnt(PerceptionMessage pm) {
-        ants.remove(pm);
+        if(!ants.remove(pm)) {
+            LOG.error("remove ant: NO ANT AT {}", getPosition());
+        }
         hasChanged = true;
     }
 
