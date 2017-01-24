@@ -17,8 +17,6 @@ public abstract class Behaviour {
 
     protected Actions dir;
     private int dirInt = 0;
-    private static final int STEPS_CNT = 3;
-    private int steps = 0;
 
     /**
      * Decides which action to do next and sends a matching message to the game.
@@ -36,11 +34,6 @@ public abstract class Behaviour {
      *      JSON format of next random move message
      */
     protected void getRandomAction(){
-        if(steps > 0) {
-            steps--;
-        }
-        else {
-            steps = STEPS_CNT;
             int newDir = new Random().nextInt(4) - 2;
             if(newDir == 0) newDir = 2;
             if(newDir != -dirInt) {
@@ -59,7 +52,6 @@ public abstract class Behaviour {
                         dir = Actions.ANT_ACTION_UP;
                 }
             }
-        }
     }
 
 }

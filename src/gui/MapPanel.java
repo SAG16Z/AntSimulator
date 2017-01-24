@@ -12,22 +12,30 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
 public class MapPanel extends JPanel {
+    private BufferedImage canvas;
     public static final int CELL_H = 200;
-    public static final int CELL_V = 400/3;
+    public static final int CELL_V = 200;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
     private static float MAX_GRADIENT = 50.0f;
     private static final Logger LOG = LoggerFactory.getLogger(MapPanel.class);
     private Map<AID, PerceptionMessage> antPerception = new HashMap<>();
-    private Map<Point, AID> antPosition = new HashMap<>();
     private Map<Integer, Anthill> anthills = new HashMap<>();
 
     public MapPanel(){
+        canvas = new BufferedImage(800 , 800 , BufferedImage.TYPE_INT_ARGB);
+        int color = Color.BLACK.getRGB();
+        for (int x = 0; x < canvas.getWidth(); x++) {
+            for (int y = 0; y < canvas.getHeight(); y++) {
+                canvas.setRGB(x, y, color);
+            }
+        }
         for (int x = 0; x < worldMap.length; ++x)
             for (int y = 0; y < worldMap[x].length; ++y)
                 worldMap[x][y] = new WorldCell(new Point(x, y));
@@ -36,11 +44,10 @@ public class MapPanel extends JPanel {
     public void setAntHill(int a, int b, int antColor) {
         Anthill anthill = new Anthill(antColor, new Point(a, b));
         anthills.put(antColor, anthill);
-
         float gradient;
         for (int x = 0; x < worldMap.length; ++x) {
             for (int y = 0; y < worldMap[x].length; ++y) {
-                if(Math.abs(anthill.getPosition().x - x) <= Anthill.INIT_SIZE/2 && Math.abs(anthill.getPosition().y - y) <= Anthill.INIT_SIZE/2) {
+                if(anthill.getPosition().x == x && anthill.getPosition().y == y) {
                     worldMap[x][y].setType(CellType.START);
                     worldMap[x][y].addGradient(anthill.getColor(), 1.0f);
                 }
@@ -54,12 +61,15 @@ public class MapPanel extends JPanel {
 
     @Override
     public synchronized void paint(Graphics g){
-        super.paint(g);
-        int width = getSize().width / CELL_H;
-        int height = getSize().height / CELL_V;
+        super.paintComponent(g);
+        int width = 800 / CELL_H;
+        int height = 800 / CELL_V;
         for (WorldCell[] cellRow : worldMap )
             for (WorldCell cell : cellRow)
-                cell.paint(g, new Dimension(width, height));
+                cell.paint(canvas, new Dimension(width, height));
+        Graphics2D g2 = (Graphics2D) g;
+        g2.drawImage(canvas, null, null);
+
     }
 
     public WorldCell[][] getWorldMap(){
@@ -71,77 +81,52 @@ public class MapPanel extends JPanel {
     public float getGradient(Point position, int color) {return worldMap[position.x][position.y].getGradient(color);}
     public float getPheromones(Point position, int color) {return worldMap[position.x][position.y].getPheromones(color);}
 
-    public Actions getUpGradient(WorldCell cell, int color){
+    private Actions getGradient(WorldCell cell, int color, boolean up){
         float gradient = 0;
         Actions action = null;
         if(isValidPosition(cell.getPosition())) {
             Point adjacent = cell.getPosition().left();
             if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().left(), color);
-                action = Actions.ANT_ACTION_LEFT;
+                action = up ? Actions.ANT_ACTION_LEFT : Actions.ANT_ACTION_RIGHT;
             }
             adjacent = cell.getPosition().right();
             if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().right(), color);
-                action = Actions.ANT_ACTION_RIGHT;
+                action = up ? Actions.ANT_ACTION_RIGHT : Actions.ANT_ACTION_LEFT;
             }
             adjacent = cell.getPosition().down();
             if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().down(), color);
-                action = Actions.ANT_ACTION_DOWN;
+                action = up ? Actions.ANT_ACTION_DOWN : Actions.ANT_ACTION_UP;
             }
             adjacent = cell.getPosition().up();
             if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
-                action = Actions.ANT_ACTION_UP;
+                action = up ? Actions.ANT_ACTION_UP : Actions.ANT_ACTION_DOWN;
             }
         }
         return action;
+    }
+
+    public Actions getUpGradient(WorldCell cell, int color){
+        return getGradient(cell, color, true);
     }
 
     public Actions getDownGradient(WorldCell cell, int color){
-        float gradient = Float.MAX_VALUE;
-        Actions action = null;
-        if(isValidPosition(cell.getPosition())) {
-            Point adjacent = cell.getPosition().left();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) <= gradient) {
-                gradient = getGradient(cell.getPosition().left(), color);
-                action = Actions.ANT_ACTION_LEFT;
-            }
-            adjacent = cell.getPosition().right();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) <= gradient) {
-                gradient = getGradient(cell.getPosition().right(), color);
-                action = Actions.ANT_ACTION_RIGHT;
-            }
-            adjacent = cell.getPosition().down();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) <= gradient) {
-                gradient = getGradient(cell.getPosition().down(), color);
-                action = Actions.ANT_ACTION_DOWN;
-            }
-            adjacent = cell.getPosition().up();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) <= gradient) {
-                action = Actions.ANT_ACTION_UP;
-            }
-        }
-        return action;
+        return getGradient(cell, color, false);
     }
 
-    public Actions getDownGradient(WorldCell cell, Actions upGradient){
-        Point adjacent = cell.getPosition().down();
-        if(upGradient == Actions.ANT_ACTION_UP && isValidPosition(adjacent))
-            return Actions.ANT_ACTION_DOWN;
+    public Actions getUpEnemyGradient(WorldCell cell, int color) {
+        int enemyColor = cell.getEnemyGradient(color);
+        if(enemyColor != 0)
+            return getGradient(cell, enemyColor, true);
+        return null;
+    }
 
-        adjacent = cell.getPosition().up();
-        if(upGradient == Actions.ANT_ACTION_DOWN && isValidPosition(adjacent))
-            return Actions.ANT_ACTION_UP;
-
-        adjacent = cell.getPosition().left();
-        if(upGradient == Actions.ANT_ACTION_RIGHT && isValidPosition(adjacent))
-            return Actions.ANT_ACTION_LEFT;
-
-        adjacent = cell.getPosition().right();
-        if(upGradient == Actions.ANT_ACTION_LEFT && isValidPosition(adjacent))
-            return Actions.ANT_ACTION_RIGHT;
-
+    public Actions getDownEnemyGradient(WorldCell cell, int color) {
+        int enemyColor = cell.getEnemyGradient(color);
+        if(enemyColor != 0)
+            return getGradient(cell, enemyColor, true);
         return null;
     }
 
@@ -154,29 +139,20 @@ public class MapPanel extends JPanel {
         return action;
     }
 
-    public synchronized void putAnts(AID sender, PerceptionMessage pm) {
+    public synchronized void putAnt(AID sender, PerceptionMessage pm) {
         antPerception.put(sender, pm);
-        antPosition.put(new Point(pm.getCell().getX(), pm.getCell().getY()), sender);
     }
 
     public PerceptionMessage getAnt(AID sender) {
         return antPerception.get(sender);
     }
 
-    public AID getAnt(Point p) {
-        return antPosition.get(p);
-    }
-
     public synchronized void removeAnt(AID sender) {
-        PerceptionMessage pm = getAnt(sender);
-        if(pm != null) {
-            Point p = new Point(pm.getCell().getX(), pm.getCell().getY());
-            antPosition.remove(p);
-        }
         antPerception.remove(sender);
     }
 
     public Anthill getAnthill(int col) { return anthills.get(col); }
+
 
 }
 

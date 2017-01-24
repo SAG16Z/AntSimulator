@@ -68,10 +68,8 @@ public class Server extends Agent {
         }
         gui = new MainFrame(this);
         mapPanel = new MapPanel();
-
         gui.add(mapPanel);
         gui.setVisible(true);
-
         // add behaviour for NOT_UNDERSTOOD message
         MessageTemplate mtAWNotUnderstood = MessageTemplate.MatchPerformative(ACLMessage.NOT_UNDERSTOOD);
         addBehaviour(new ReceiveMessageBehaviour(mtAWNotUnderstood, this::onAWNotUnderstood));
@@ -81,10 +79,11 @@ public class Server extends Agent {
         addBehaviour(new ReceiveMessageBehaviour(mtAWRequest, this::onAWRequest));
 
         for (int i = 0; i < TEAM_CNT; i++) {
-            int a = Anthill.INIT_SIZE/2 + new Random().nextInt(mapPanel.CELL_H - Anthill.INIT_SIZE - 1);
-            int b = Anthill.INIT_SIZE/2 + new Random().nextInt(mapPanel.CELL_V - Anthill.INIT_SIZE - 1);
+            int a = Anthill.INIT_SIZE/2 + new Random().nextInt(MapPanel.CELL_H - Anthill.INIT_SIZE - 1);
+            int b = Anthill.INIT_SIZE/2 + new Random().nextInt(MapPanel.CELL_V - Anthill.INIT_SIZE - 1);
             setAntHill(a, b, i);
         }
+        gui.repaint();
     }
 
     private void spawnAnt(int ant, int team, AntMessageCreator creator, AntRole role) throws StaleProxyException {
@@ -95,15 +94,16 @@ public class Server extends Agent {
         ac.start();
     }
 
-    void setAntHill(int a, int b, int antTeam) {
+    private void setAntHill(int a, int b, int antTeam) {
         mapPanel.setAntHill(a, b, teamCols[antTeam].getRGB());
         try {
-            AntMessageCreator c = new AntMessageCreator(teamCols[antTeam].getRGB(), false);
             for (int i = 0; i < ANT_CNT; i++) {
+                AntMessageCreator c = new AntMessageCreator(teamCols[antTeam].getRGB(), false);
                 //float rand = new Random().nextFloat();
                 if (i % 4 == 0) {
                     spawnAnt(i, antTeam, c, AntRole.WORKER);
-                } else if (i % 4 == 1){
+                }
+                else if (i % 4 == 1){
                     spawnAnt(i, antTeam, c, AntRole.BUILDER);
                 }
                 else if (i % 4 == 2){
@@ -210,22 +210,20 @@ public class Server extends Agent {
             int y = nest.getPosition().y - SPAWN_AREA + r.nextInt(2*SPAWN_AREA);
             if(x < 0) x = 0;
             if(y < 0) y = 0;
-            if(x >= mapPanel.CELL_H) x = mapPanel.CELL_H-1;
-            if(y >= mapPanel.CELL_V) y = mapPanel.CELL_V-1;
+            if(x >= MapPanel.CELL_H) x = MapPanel.CELL_H-1;
+            if(y >= MapPanel.CELL_V) y = MapPanel.CELL_V-1;
             // don't create zombies!
             pm.setState("ALIVE");
             pm.setColor(ant.getColor());
             pm.setQueen(ant.getQueen());
             pm.setCurrentFood(0);
-            pm.setSteps(0);
             pm.setFoodToMaterialRatio((float)nest.getFood() / (float)nest.getMaterial());
             if(pm.getFoodToMaterialRatio() > 0.5)
                 pm.setRole(AntRole.BUILDER);
             else
                 pm.setRole(AntRole.WORKER);
             updateCellPerceptionMessage(mapPanel.getWorldMap()[x][y], pm);
-            mapPanel.putAnts(msg.getSender(), pm);
-
+            mapPanel.putAnt(msg.getSender(), pm);
             // set perception action as current action requested
             pm.setLastAction(action);
         }
@@ -236,7 +234,7 @@ public class Server extends Agent {
             //If ant was killed by warrior, send it a message to shutdown agent
             if("DEAD".equals(pm.getState())) {
                 Point p = new Point(pm.getCell().getX(), pm.getCell().getY());
-                LOG.info("Dead at {} {}.", p.x, p.y);
+                LOG.info("Killed at {} {}.", p.x, p.y);
                 replyType = ACLMessage.REFUSE;
                 mapPanel.removeAnt(msg.getSender());
                 mapPanel.getWorldMap()[p.x][p.y].removeAnt(pm);
@@ -274,8 +272,6 @@ public class Server extends Agent {
                 }
                 else {
                     replyType = ACLMessage.REFUSE;
-                    //TODO also send REFUSE when there's obstacle on (x,y) or ant
-                    // is dead (with DEAD as perception message state)
                 }
             }
             else if(action == Actions.ANT_ACTION_COLLECT_FOOD){
@@ -376,21 +372,17 @@ public class Server extends Agent {
                 }
                 else if (action == Actions.ANT_ACTION_KILL) {
                     replyType = ACLMessage.INFORM;
-
                     int x = pm.getCell().getX();
                     int y = pm.getCell().getY();
                     for(int i = x-2; i < x+2; i++)
                         for(int j = y-2; j < y+2; j++)
-                            if(x >= 0 && x < MapPanel.CELL_H)
-                                if(y >= 0 && y < MapPanel.CELL_V) {
-                                    Point p = new Point(i, j);
-                                    PerceptionMessage pem = mapPanel.getAnt(mapPanel.getAnt(p));
-                                    if(pem != null)
-                                        if(pem.getColor() != pm.getColor()) {
-                                            //mapPanel.getWorldMap()[p.x][p.y].removeAnt(pem);
-                                            pem.setState("DEAD");
-                                            //mapPanel.putAnts(mapPanel.getAnt(p), pem);
+                            if(i >= 0 && i < MapPanel.CELL_H)
+                                if(j >= 0 && j < MapPanel.CELL_V) {
+                                    for(PerceptionMessage toBeKilled : mapPanel.getWorldMap()[i][j].getAnts()) {
+                                        if (toBeKilled.getColor() != pm.getColor()) {
+                                            toBeKilled.setState("DEAD");
                                         }
+                                    }
                                 }
                 }
             }
@@ -442,31 +434,23 @@ public class Server extends Agent {
         cm.setColor(mapPanel.getWorldMap()[x][y].getMaxGradientCol());
         cm.setGradientTotalValue(mapPanel.getWorldMap()[x][y].getSumGradients());
         cm.setGradientValue(mapPanel.getWorldMap()[x][y].getGradient(pm.getColor()));
-        Actions up = mapPanel.getUpGradient(cell, pm.getColor());
-        cm.setUpGradient(up);
-        cm.setDownGradient(mapPanel.getDownGradient(cell, up));
-        //cm.setEnemyGradient(mapPanel.getWorldMap()[x][y].getEnemyGradient(pm.getColor()));
-        int enemyCol = mapPanel.getWorldMap()[x][y].getEnemyGradient(pm.getColor());
-        if(enemyCol != 0) {
-            up = mapPanel.getUpGradient(cell, enemyCol);
-            cm.setUpEnemyGradient(up);
-            cm.setDownEnemyGradient(mapPanel.getDownGradient(cell, up));
-        }
+        cm.setUpGradient(mapPanel.getUpGradient(cell, pm.getColor()));
+        cm.setDownGradient(mapPanel.getDownGradient(cell, pm.getColor()));
+        cm.setUpEnemyGradient(mapPanel.getUpEnemyGradient(cell, pm.getColor()));
+        cm.setDownEnemyGradient(mapPanel.getDownEnemyGradient(cell, pm.getColor()));
         cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
-        pm.setSteps(pm.getSteps()+1);
         pm.setCell(cm);
 
         boolean enemies = false;
         for(int i = x-2; i < x+2; i++)
             for(int j = y-2; j < y+2; j++)
-                if(x >= 0 && x < MapPanel.CELL_H)
-                    if(y >= 0 && y < MapPanel.CELL_V) {
-                        Point p = new Point(i, j);
-                        PerceptionMessage pem = mapPanel.getAnt(mapPanel.getAnt(p));
-                        if(pem != null)
-                            if(pem.getColor() != pm.getColor()) {
+                if(i >= 0 && i < MapPanel.CELL_H)
+                    if(j >= 0 && j < MapPanel.CELL_V) {
+                        for(PerceptionMessage toBeKilled : mapPanel.getWorldMap()[i][j].getAnts()) {
+                            if (toBeKilled.getColor() != pm.getColor()) {
                                 enemies = true;
                             }
+                        }
                     }
         pm.setEnemiesNearby(enemies);
     }

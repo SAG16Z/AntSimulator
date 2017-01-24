@@ -1,11 +1,13 @@
 package map;
 
+import enums.Actions;
 import enums.CellType;
 import messages.PerceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
 
@@ -28,48 +30,51 @@ public class WorldCell {
     private int material = 0;
     private boolean gatheredFood = false;
     private static Color queenCol = Color.white;
+    private boolean hasChanged = true;
 
 
-    public synchronized void paint(Graphics g, Dimension size) {
-        int w = size.width;// - insets.left - insets.right;
-        int h = size.height;// - insets.top - insets.bottom;
-        g.setColor(Color.BLACK);
-        g.fillRect(position.x * w, position.y * h, w, h);
-        if(type == CellType.START) {
-            g.setColor(new Color(maxGradientColors[0]));
+    public synchronized void paint(BufferedImage image, Dimension size) {
+        if(hasChanged()) {
+            int w = size.width;// - insets.left - insets.right;
+            int h = size.height;// - insets.top - insets.bottom;
+            Graphics g = image.getGraphics();
+            g.setColor(Color.BLACK);
             g.fillRect(position.x * w, position.y * h, w, h);
-        }
-        else {
-            for (int gr: gradients.keySet()) {
-                int alpha = (int) (gradients.get(gr) * 100);
-                Color c = new Color(gr);
-                g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha));
-                g.fillRect(position.x*w, position.y*h, w, h);
+            if (type == CellType.START) {
+                g.setColor(new Color(maxGradientColors[0]));
+                g.fillRect(position.x * w, position.y * h, w, h);
+            } else {
+                for (int gr : gradients.keySet()) {
+                    int alpha = (int) (gradients.get(gr) * 100);
+                    Color c = new Color(gr);
+                    g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha));
+                    g.fillRect(position.x * w, position.y * h, w, h);
+                }
             }
-        }
-        // for now drawing all pheromones green
-        float currentPheromones = getAllPheromones() / 100.f;
-        g.setColor(new Color(0.0f, 1.0f, 0.0f, currentPheromones > 1.0f ? 1.0f : currentPheromones));
-        g.fillRect(position.x * w, position.y * h, w, h);
-        // food is red
-        g.setColor(new Color(1.0f, 0.0f, 0.0f, (float) food / MAX_FOOD));
-        g.fillRect(position.x * w, position.y * h, w, h);
-        g.setColor(new Color(0.0f, 0.0f, 1.0f, (float) material / MAX_MATERIAL));
-        g.fillRect(position.x * w, position.y * h, w, h);
-
-        if(gatheredFood) {
-            g.setColor(Color.red);
+            // for now drawing all pheromones green
+            float currentPheromones = getAllPheromones() / 100.f;
+            g.setColor(new Color(0.0f, 1.0f, 0.0f, currentPheromones > 1.0f ? 1.0f : currentPheromones));
             g.fillRect(position.x * w, position.y * h, w, h);
-        }
+            // food is red
+            g.setColor(new Color(1.0f, 0.0f, 0.0f, (float) food / MAX_FOOD));
+            g.fillRect(position.x * w, position.y * h, w, h);
+            g.setColor(new Color(0.0f, 0.0f, 1.0f, (float) material / MAX_MATERIAL));
+            g.fillRect(position.x * w, position.y * h, w, h);
 
-        if(!ants.isEmpty()) {
-            if(ants.get(0).isQueen())
-                g.setColor(queenCol);
-            else
-                g.setColor(new Color(ants.get(0).getColor())); // draw just the first ant color
-            g.fillRect(position.x*w, position.y*h, w, h);
-        }
+            if (gatheredFood) {
+                g.setColor(Color.red);
+                g.fillRect(position.x * w, position.y * h, w, h);
+            }
 
+            if (!ants.isEmpty()) {
+                if (ants.get(0).isQueen())
+                    g.setColor(queenCol);
+                else
+                    g.setColor(new Color(ants.get(0).getColor())); // draw just the first ant color
+                g.fillRect(position.x * w, position.y * h, w, h);
+            }
+            hasChanged = false;
+        }
     }
 
     /**
@@ -104,10 +109,16 @@ public class WorldCell {
      */
     public void setAnt(PerceptionMessage _ant) {
         ants.add(_ant);
+        hasChanged = true;
     }
 
     public void removeAnt(PerceptionMessage pm) {
         ants.remove(pm);
+        hasChanged = true;
+    }
+
+    public ArrayList<PerceptionMessage> getAnts() {
+        return new ArrayList<>(ants);
     }
 
     public Point getPosition() { return position; }
@@ -128,6 +139,7 @@ public class WorldCell {
         if(this.food <= FOOD_AMOUNT_TO_CONSUME)
             consumed = this.food;
         this.food -= consumed;
+        hasChanged = true;
         return consumed;
     }
 
@@ -136,6 +148,7 @@ public class WorldCell {
         if(this.material <= MATERIAL_AMOUNT_TO_CONSUME)
             consumed = this.material;
         this.material -= consumed;
+        hasChanged = true;
         return consumed;
     }
 
@@ -188,6 +201,7 @@ public class WorldCell {
     public synchronized void addPheromones(int color) {
         removeVanishedPheromones();
         pheromones.add(new Pheromone(color));
+        hasChanged = true;
     }
 
     public synchronized void setType(CellType type) {
@@ -197,6 +211,7 @@ public class WorldCell {
             material = 0;
             pheromones.clear();
         }
+        hasChanged = true;
     }
 
     public void addGradient(int color, float gradient) {
@@ -212,13 +227,18 @@ public class WorldCell {
             maxGradientColors[1] = color;
         }
         gradients.put(color, gradient);
+        hasChanged = true;
     }
 
-    public synchronized void setGatheredFood(boolean food) { gatheredFood = food; }
+    public synchronized void setGatheredFood(boolean food) { gatheredFood = food;
+    hasChanged = true;}
 
     public synchronized boolean getGatheredFood() { return gatheredFood; }
 
     public synchronized int getMaxGradientCol() { return maxGradientColors[0]; }
 
+    public boolean hasChanged() {
+        return hasChanged || getAllPheromones() > 0;
+    }
 }
 
