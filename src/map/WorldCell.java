@@ -30,12 +30,12 @@ public class WorldCell {
     private CellType type;
     private int food = 0;
     private int material = 0;
-    private boolean isFood = false;
+    private boolean isAnthillFood = false;
     private boolean hasChanged = true;
 
 
     public synchronized void paint(BufferedImage image, Dimension size) {
-        if(hasChanged()) {
+        if(getHasChanged()) {
             int w = size.width;// - insets.left - insets.right;
             int h = size.height;// - insets.top - insets.bottom;
             Graphics g = image.getGraphics();
@@ -63,7 +63,7 @@ public class WorldCell {
             g.setColor(new Color(0.0f, 0.0f, 1.0f, (float) material / MAX_MATERIAL));
             g.fillRect(position.x * w, position.y * h, w, h);
 
-            if (isFood) {
+            if (isAnthillFood) {
                 g.setColor(Color.red);
                 g.fillRect(position.x * w, position.y * h, w, h);
             }
@@ -233,16 +233,14 @@ public class WorldCell {
         hasChanged = true;
     }
 
-    public synchronized void setisGatheredFood(boolean isFood) {
-        this.isFood = isFood;
+    public synchronized void setIsAnthillFood(boolean isAnthillFood) {
+        this.isAnthillFood = isAnthillFood;
         hasChanged = true;
     }
 
-    public synchronized boolean getisGatheredFood() { return isFood; }
-
     public synchronized int getMaxGradientCol() { return maxGradientColors[0]; }
 
-    public boolean hasChanged() {
+    public boolean getHasChanged() {
         return hasChanged || getAllPheromones() > 0;
     }
 

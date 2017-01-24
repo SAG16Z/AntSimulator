@@ -254,10 +254,8 @@ public class Server extends Agent {
 
     private int sendDropMaterialReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
         Anthill nest = mapPanel.getAnthill(pm.getColor());
-        Point point = nest.getNextPoint();
-        // mapPanel.getWorldMap()[point.x][point.y].setType(CellType.START);
+        nest.addMaterial(pm.getCurrentMaterial());
         pm.setCurrentMaterial(0);
-        nest.setNextPoint();
         pm.setFoodToMaterialRatio(nest.getFoodToMaterialRatio());
         updateCellPerceptionMessage(mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()], pm);
         return ACLMessage.INFORM;
@@ -265,28 +263,27 @@ public class Server extends Agent {
 
     private int sendDropFoodReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
         Anthill nest = mapPanel.getAnthill(pm.getColor());
-        if (nest.canPlaceFood()) {
-            pm.setCurrentFood(0);
-            //Point point = nest.getNextFood();
-            Point point = nest.setNextFood();
-            mapPanel.getWorldMap()[point.x][point.y].setisGatheredFood(true);
-            pm.setFoodToMaterialRatio(nest.getFoodToMaterialRatio());
-            if (nest.canCreateQueen()) {
-                try {
-                    AntMessageCreator c = new AntMessageCreator(pm.getColor(), true);
-                    spawnAnt(0, queensCnt, c, AntRole.QUEEN);
-                    queensCnt++;
-                    Vector<Point> foodToRemove = nest.consumeFood();
-                    for (Point p : foodToRemove) {
-                        mapPanel.getWorldMap()[p.x][p.y].setisGatheredFood(false);
-                    }
-                            /*Vector<Point> materialToRemove = nest.consumeMaterial();
-                            for(Point p : materialToRemove) {
-                                mapPanel.getWorldMap()[p.x][p.y].setType(CellType.FREE);
-                            }*/
-                } catch (StaleProxyException e) {
-                    e.printStackTrace();
+        Point newFoodPosition = nest.addFood(pm.getCurrentFood());
+        pm.setCurrentFood(0);
+        if(newFoodPosition != null) {
+            mapPanel.getWorldMap()[newFoodPosition.x][newFoodPosition.y].setIsAnthillFood(true);
+        }
+        pm.setFoodToMaterialRatio(nest.getFoodToMaterialRatio());
+        if (nest.canCreateQueen()) {
+            try {
+                AntMessageCreator c = new AntMessageCreator(pm.getColor(), true);
+                spawnAnt(0, queensCnt, c, AntRole.QUEEN);
+                queensCnt++;
+                Vector<Point> foodToRemove = nest.consumeFood();
+                for (Point p : foodToRemove) {
+                    mapPanel.getWorldMap()[p.x][p.y].setIsAnthillFood(false);
                 }
+                        /*Vector<Point> materialToRemove = nest.consumeMaterial();
+                        for(Point p : materialToRemove) {
+                            mapPanel.getWorldMap()[p.x][p.y].setType(CellType.FREE);
+                        }*/
+            } catch (StaleProxyException e) {
+                e.printStackTrace();
             }
         }
         updateCellPerceptionMessage(mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()], pm);

@@ -6,34 +6,34 @@ import java.util.List;
 import java.util.Vector;
 
 public class Anthill {
-    public static final int INIT_SIZE = 3;
+    private static final int INIT_SIZE = 3;
     public static final int MAX_SIZE = 9;
+    private static final int FOOD_FOR_QUEEN = 10;
 
     private int color;
     private Point position;
-    private Point nextPoint;
+    private Point nextMaterialPosition;
+    private Point nextFoodPosition;
     private Direction expandDir = Direction.LEFT;
+    private Direction foodDir = Direction.LEFT;
     private int expandCnt = INIT_SIZE;
     private int size = INIT_SIZE;
     private int material = INIT_SIZE * INIT_SIZE;
     private int food = 0;
-    private Point nextFood;
-    private Direction foodDir = Direction.LEFT;
     private int foodCnt = 1;
     private int foodSize = 1;
-    private static int FOOD_FOR_QUEEN = 10;
-    private Vector<Point> foodPoints = new Vector<Point>();
-    private Vector<Point> foodHoles = new Vector<Point>();
-    //private Vector<Point> materialPoints = new Vector<Point>();
-    private Vector<Point> holes = new Vector<Point>();
+    private Vector<Point> foodPoints = new Vector<>();
+    private Vector<Point> foodHoles = new Vector<>();
+    //private Vector<Point> materialPoints = new Vector<>();
+    private Vector<Point> materialHoles = new Vector<>();
 
     public Anthill(int antColor, Point point) {
         this.color = antColor;
         this.position = point;
         int x = position.x - INIT_SIZE/2 - 1;
         int y = position.y - INIT_SIZE/2;
-        nextPoint = new Point(x, y);
-        nextFood = position;
+        nextMaterialPosition = new Point(x, y);
+        nextFoodPosition = position;
         /*for(x = position.x - INIT_SIZE/2; x <= position.x + INIT_SIZE/2; x++) {
             for(y = position.y - INIT_SIZE/2; y <= position.y + INIT_SIZE/2; y++) {
                 materialPoints.add(new Point(x,y));
@@ -49,17 +49,13 @@ public class Anthill {
         return color;
     }
 
-    public Point getNextPoint() { return nextPoint; }
+    public void addMaterial(int materialAmount){
+        material += materialAmount;
 
-    public Point getNextFood() { return nextFood; }
-
-    public synchronized void setNextPoint() {
-        material++;
-
-        if(!holes.isEmpty()) {
+        if(!materialHoles.isEmpty()) {
             //materialPoints.add(holes.lastElement());
             //return holes.remove(holes.size()-1);
-            nextPoint = holes.remove(holes.size()-1);
+            nextMaterialPosition = materialHoles.remove(materialHoles.size()-1);
         }
 
         //materialPoints.add(nextPoint);
@@ -67,7 +63,7 @@ public class Anthill {
 
         if(material < MAX_SIZE * MAX_SIZE) {
             if (expandDir == Direction.LEFT) {
-                nextPoint = nextPoint.up();
+                nextMaterialPosition = nextMaterialPosition.up();
                 expandCnt--;
                 if (expandCnt == 0) {
                     expandDir = Direction.UP;
@@ -75,14 +71,14 @@ public class Anthill {
                     expandCnt = size;
                 }
             } else if (expandDir == Direction.UP) {
-                nextPoint = nextPoint.right();
+                nextMaterialPosition = nextMaterialPosition.right();
                 expandCnt--;
                 if (expandCnt == 0) {
                     expandDir = Direction.RIGHT;
                     expandCnt = size;
                 }
             } else if (expandDir == Direction.RIGHT) {
-                nextPoint = nextPoint.down();
+                nextMaterialPosition = nextMaterialPosition.down();
                 expandCnt--;
                 if (expandCnt == 0) {
                     size++;
@@ -90,7 +86,7 @@ public class Anthill {
                     expandCnt = size;
                 }
             } else {
-                nextPoint = nextPoint.left();
+                nextMaterialPosition = nextMaterialPosition.left();
                 expandCnt--;
                 if (expandCnt == 0) {
                     expandDir = Direction.LEFT;
@@ -102,60 +98,65 @@ public class Anthill {
         //return point;
     }
 
-    public synchronized Point setNextFood() {
-        food++;
-
-        if(!foodHoles.isEmpty()) {
-            foodPoints.add(foodHoles.lastElement());
-            return foodHoles.remove(foodHoles.size()-1);
-        }
-
-        foodPoints.add(nextFood);
-        Point point = nextFood;
-
-        if (foodDir == Direction.LEFT) {
-            nextFood = nextFood.left();
-            foodCnt--;
-            if(foodCnt == 0) {
-                foodDir = Direction.UP;
-                foodCnt = foodSize;
+    public Point addFood(int foodAmount){
+        if(canPlaceFood()){
+            food+=foodAmount;
+            if(!foodHoles.isEmpty()) {
+                foodPoints.add(foodHoles.lastElement());
+                return foodHoles.remove(foodHoles.size()-1);
             }
-        }
-        else if (foodDir == Direction.UP) {
-            nextFood = nextFood.up();
-            foodCnt--;
-            if(foodCnt == 0) {
-                foodSize++;
-                foodDir = Direction.RIGHT;
-                foodCnt = foodSize;
-            }
-        }
-        else if (foodDir == Direction.RIGHT) {
-            nextFood = nextFood.right();
-            foodCnt--;
-            if(foodCnt == 0) {
-                foodDir = Direction.DOWN;
-                foodCnt = foodSize;
-            }
-        }
-        else {
-            nextFood = nextFood.down();
-            foodCnt--;
-            if(foodCnt == 0) {
-                foodSize++;
-                foodDir = Direction.LEFT;
-                foodCnt = foodSize;
-            }
-        }
+            foodPoints.add(nextFoodPosition);
+            Point point = nextFoodPosition;
 
-        return point;
+            if (foodDir == Direction.LEFT) {
+                nextFoodPosition = nextFoodPosition.left();
+                foodCnt--;
+                if(foodCnt == 0) {
+                    foodDir = Direction.UP;
+                    foodCnt = foodSize;
+                }
+            }
+            else if (foodDir == Direction.UP) {
+                nextFoodPosition = nextFoodPosition.up();
+                foodCnt--;
+                if(foodCnt == 0) {
+                    foodSize++;
+                    foodDir = Direction.RIGHT;
+                    foodCnt = foodSize;
+                }
+            }
+            else if (foodDir == Direction.RIGHT) {
+                nextFoodPosition = nextFoodPosition.right();
+                foodCnt--;
+                if(foodCnt == 0) {
+                    foodDir = Direction.DOWN;
+                    foodCnt = foodSize;
+                }
+            }
+            else {
+                nextFoodPosition = nextFoodPosition.down();
+                foodCnt--;
+                if(foodCnt == 0) {
+                    foodSize++;
+                    foodDir = Direction.LEFT;
+                    foodCnt = foodSize;
+                }
+            }
+
+            return point;
+
+        }
+        else{
+            if(foodPoints.isEmpty())
+                return null;
+            return foodPoints.lastElement();
+        }
     }
 
-    public synchronized boolean canPlaceFood() {
+    private synchronized boolean canPlaceFood() {
         return (material > food);
     }
-    public synchronized int getFood() { return food; }
-    public synchronized int getMaterial() { return material; }
+
     public synchronized boolean canCreateQueen() { return (food >= FOOD_FOR_QUEEN); }
 
     public synchronized Vector<Point> consumeFood() {

@@ -44,8 +44,8 @@ public class MapPanel extends JPanel {
 
     public void setAntHill(int a, int b, int antColor) {
         a = Math.max(a, Anthill.MAX_SIZE/2);
-        b = Math.max(b, Anthill.MAX_SIZE/2);
         a = Math.min(a, CELL_H - Anthill.MAX_SIZE - 1);
+        b = Math.max(b, Anthill.MAX_SIZE/2);
         b = Math.min(b, CELL_V - Anthill.MAX_SIZE - 1);
         Anthill anthill = new Anthill(antColor, new Point(a, b));
         anthills.put(antColor, anthill);
@@ -97,22 +97,22 @@ public class MapPanel extends JPanel {
         Actions action = null;
         if(isValidPosition(cell.getPosition())) {
             Point adjacent = cell.getPosition().left();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) > 0 && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().left(), color);
                 action = up ? Actions.ANT_ACTION_LEFT : Actions.ANT_ACTION_RIGHT;
             }
             adjacent = cell.getPosition().right();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) > 0 && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().right(), color);
                 action = up ? Actions.ANT_ACTION_RIGHT : Actions.ANT_ACTION_LEFT;
             }
             adjacent = cell.getPosition().down();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) > 0 && getGradient(adjacent, color) >= gradient) {
                 gradient = getGradient(cell.getPosition().down(), color);
                 action = up ? Actions.ANT_ACTION_DOWN : Actions.ANT_ACTION_UP;
             }
             adjacent = cell.getPosition().up();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) >= gradient) {
+            if (isValidPosition(adjacent) && getGradient(adjacent, color) > 0 && getGradient(adjacent, color) >= gradient) {
                 action = up ? Actions.ANT_ACTION_UP : Actions.ANT_ACTION_DOWN;
             }
         }

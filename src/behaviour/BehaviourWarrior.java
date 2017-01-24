@@ -23,6 +23,7 @@ public class BehaviourWarrior extends Behaviour {
 
         if(currentPerception.getEnemiesNearby())
         {
+            LOG.info("{} kills enemies at {}", ant.getLocalName(), currentPos);
             ant.sendReply(Actions.ANT_ACTION_KILL);
             return;
         }
