@@ -230,7 +230,6 @@ public class Server extends Agent {
         else {
             // get perception message from hashmap
             pm = mapPanel.getAnt(msg.getSender());
-
             //If ant was killed by warrior, send it a message to shutdown agent
             if("DEAD".equals(pm.getState())) {
                 Point p = new Point(pm.getCell().getX(), pm.getCell().getY());
@@ -389,6 +388,7 @@ public class Server extends Agent {
         }
         // set perception action as current action requested
         pm.setLastAction(action);
+
         // build and send reply to ant
         ACLMessage reply = prepareReply(msg, replyType);
         reply.setContent(MessageUtil.asJsonPerception(pm));

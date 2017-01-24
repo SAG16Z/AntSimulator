@@ -2,6 +2,7 @@ package behaviour;
 
 import agents.Ant;
 import enums.Actions;
+import enums.AntRole;
 import enums.CellType;
 import jade.lang.acl.ACLMessage;
 import map.Point;
@@ -16,6 +17,7 @@ public class BehaviourWorker extends Behaviour{
 
     private static final Logger LOG = LoggerFactory.getLogger(BehaviourWorker.class);
 
+    public AntRole getRole(){ return AntRole.WORKER; }
     /**
      * Decides which action to do next and sends a matching message to the game.
      * service.

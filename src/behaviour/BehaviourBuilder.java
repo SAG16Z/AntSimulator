@@ -2,6 +2,7 @@ package behaviour;
 
 import agents.Ant;
 import enums.Actions;
+import enums.AntRole;
 import enums.CellType;
 import jade.lang.acl.ACLMessage;
 import map.Point;
@@ -14,6 +15,8 @@ import org.slf4j.LoggerFactory;
  */
 public class BehaviourBuilder extends Behaviour {
     private static final Logger LOG = LoggerFactory.getLogger(BehaviourBuilder.class);
+
+    public AntRole getRole(){ return AntRole.BUILDER; }
 
     public void decideNextAction(Ant ant, ACLMessage reply, PerceptionMessage currentPerception, String name, Point currentPos) {
         if (reply == null) {

@@ -2,6 +2,7 @@ package behaviour;
 
 import agents.Ant;
 import enums.Actions;
+import enums.AntRole;
 import jade.lang.acl.ACLMessage;
 import map.Point;
 import messages.PerceptionMessage;
@@ -24,6 +25,7 @@ public abstract class Behaviour {
      */
     public abstract void decideNextAction(Ant ant, ACLMessage reply, PerceptionMessage currentPerception, String name, Point currentPos);
 
+    public abstract AntRole getRole();
     /**
      * Generate message for random move
      * -1 - left
