@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Vector;
 
 public class Anthill {
-    private static final int INIT_SIZE = 3;
+    public static final int INIT_SIZE = 3;
     public static final int MAX_SIZE = 9;
     private static final int FOOD_FOR_ANT = 10;
     public static final float QUEEN_CHANCE = 0.2f;
@@ -52,8 +52,10 @@ public class Anthill {
         return color;
     }
 
+    public Point getNextPoint() { return nextMaterialPosition; }
+
     public void addMaterial(int materialAmount){
-        material += materialAmount;
+        material += 1;
 
         if(!materialHoles.isEmpty()) {
             //materialPoints.add(holes.lastElement());

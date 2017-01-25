@@ -259,9 +259,11 @@ public class Server extends Agent {
 
     private int sendDropMaterialReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
         Anthill nest = mapPanel.getAnthill(pm.getColor());
+        Point point = nest.getNextPoint();
         nest.addMaterial(pm.getCurrentMaterial());
         pm.setCurrentMaterial(0);
         pm.setFoodToMaterialRatio(nest.getFoodToMaterialRatio());
+        mapPanel.getWorldMap()[point.x][point.y].setType(CellType.NEST);
         updateCellPerceptionMessage(mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()], pm);
         return ACLMessage.INFORM;
     }

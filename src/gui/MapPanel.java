@@ -59,6 +59,10 @@ public class MapPanel extends JPanel {
                     worldMap[x][y].addGradient(anthill.getColor(), 1.0f);
                 }
                 else {
+                    if(x >= (anthill.getPosition().x - Anthill.INIT_SIZE/2) && x <= (anthill.getPosition().x + Anthill.INIT_SIZE/2) &&
+                            y >= (anthill.getPosition().y - Anthill.INIT_SIZE/2) && y <= (anthill.getPosition().y + Anthill.INIT_SIZE/2)) {
+                        worldMap[x][y].setType(CellType.NEST);
+                    }
                     gradient = Math.max(0, (MAX_GRADIENT - (float) Math.hypot(x - anthill.getPosition().x, y - anthill.getPosition().y))/MAX_GRADIENT);
                     worldMap[x][y].addGradient(anthill.getColor(), gradient);
                 }

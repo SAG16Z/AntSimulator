@@ -41,7 +41,7 @@ public class WorldCell {
             Graphics g = image.getGraphics();
             g.setColor(Color.BLACK);
             g.fillRect(position.x * w, position.y * h, w, h);
-            if (type == CellType.START) {
+            if (type == CellType.START || type == CellType.NEST) {
                 g.setColor(new Color(maxGradientColors[0]));
                 g.fillRect(position.x * w, position.y * h, w, h);
             } else {
@@ -211,7 +211,7 @@ public class WorldCell {
 
     public synchronized void setType(CellType type) {
         this.type = type;
-        if (type == CellType.START) {
+        if (type == CellType.START || type == CellType.NEST) {
             food = 0;
             material = 0;
             pheromones.clear();
