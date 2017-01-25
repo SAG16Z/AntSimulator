@@ -8,7 +8,10 @@ import java.util.Vector;
 public class Anthill {
     private static final int INIT_SIZE = 3;
     public static final int MAX_SIZE = 9;
-    private static final int FOOD_FOR_QUEEN = 10;
+    private static final int FOOD_FOR_ANT = 10;
+    public static final float QUEEN_CHANCE = 0.2f;
+    public static final float WORKER_CHANCE = QUEEN_CHANCE + 0.4f;
+    public static final float BUILDER_CHANCE = WORKER_CHANCE + 0.4f;
 
     private int color;
     private Point position;
@@ -157,11 +160,11 @@ public class Anthill {
         return (material > food);
     }
 
-    public boolean canCreateQueen() { return (food >= FOOD_FOR_QUEEN); }
+    public boolean canCreateAnt() { return (food >= FOOD_FOR_ANT); }
 
     public Vector<Point> consumeFood() {
-        food -= FOOD_FOR_QUEEN;
-        List<Point> list = foodPoints.subList(foodPoints.size()-FOOD_FOR_QUEEN, foodPoints.size());
+        food -= FOOD_FOR_ANT;
+        List<Point> list = foodPoints.subList(foodPoints.size()-FOOD_FOR_ANT, foodPoints.size());
         foodHoles.addAll(list);
         Vector<Point> foodToRemove = new Vector<Point>(list);
         list.clear();

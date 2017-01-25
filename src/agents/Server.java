@@ -40,15 +40,14 @@ public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     private static final int ANT_CNT = 10;
     private static final int TEAM_CNT = 1;
-    private static final float WORKER_PROB = 0.5f;
-    //private static final float QUEEN_PROB = 0.1f;
-    //private static final float BUILDER_PROB = 0.5f;
 
     private Color[] teamCols = {Color.cyan, Color.yellow, Color.magenta, Color.orange};
     private MainFrame gui;
     private MapPanel mapPanel;
     private int currentTeams = TEAM_CNT;
     private int queensCnt = 0;
+
+    private Random r = new Random(555);
 
     protected void setup() {
         // Register server in the yellow pages
@@ -275,11 +274,20 @@ public class Server extends Agent {
             mapPanel.getWorldMap()[newFoodPosition.x][newFoodPosition.y].setIsAnthillFood(true);
         }
         pm.setFoodToMaterialRatio(nest.getFoodToMaterialRatio());
-        if (nest.canCreateQueen()) {
+        if (nest.canCreateAnt()) {
             try {
-                AntMessageCreator c = new AntMessageCreator(pm.getColor(), true);
-                spawnAnt(0, queensCnt, c, AntRole.QUEEN);
-                queensCnt++;
+                float dice = r.nextFloat();
+                if(dice <= Anthill.QUEEN_CHANCE) {
+                    AntMessageCreator c = new AntMessageCreator(pm.getColor(), true);
+                    spawnAnt(0, queensCnt, c, AntRole.QUEEN);
+                    queensCnt++;
+                } else if(dice > Anthill.QUEEN_CHANCE && dice <= Anthill.WORKER_CHANCE) {
+                    AntMessageCreator c = new AntMessageCreator(pm.getColor(), false);
+                    spawnAnt(r.nextInt(), pm.getColor(), c, AntRole.WORKER);
+                } else {
+                    AntMessageCreator c = new AntMessageCreator(pm.getColor(), false);
+                    spawnAnt(r.nextInt(), pm.getColor(), c, AntRole.BUILDER);
+                }
                 Vector<Point> foodToRemove = nest.consumeFood();
                 for (Point p : foodToRemove) {
                     mapPanel.getWorldMap()[p.x][p.y].setIsAnthillFood(false);
