@@ -22,8 +22,6 @@ import messages.PerceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
-
 public class Ant extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Ant.class);
     private AID serverAgent;
@@ -93,7 +91,7 @@ public class Ant extends Agent {
                                 MessageTemplate.or(mtAWRefuse, mtFailure))));
         addBehaviour(new ReceiveMessageBehaviour(mtOther, this::onUnknownMessage));
 
-        addBehaviour(new TickerBehaviour(this, 40){
+        addBehaviour(new TickerBehaviour(this, 20){
             @Override
             public void onTick() {
                 if(currentPerception != null &&
@@ -260,12 +258,6 @@ public class Ant extends Agent {
         reply = msg.createReply();
         reply.setPerformative(ACLMessage.REQUEST);
         reply.setSender(getAID());
-    }
-
-    public void sendReply(String content) {
-        reply.setContent(content);
-        send(reply);
-        reply = null;
     }
 
     public void sendReply(Actions action) {

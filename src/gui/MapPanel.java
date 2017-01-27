@@ -20,8 +20,8 @@ import java.util.*;
 
 public class MapPanel extends JPanel {
     private BufferedImage canvas;
-    private static final int CELL_H = 200;
-    private static final int CELL_V = 200;
+    private static final int CELL_H = 100;
+    private static final int CELL_V = 100;
     private static final int SPAWN_AREA = 5;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
     private static float MAX_GRADIENT = 50.0f;
@@ -30,7 +30,7 @@ public class MapPanel extends JPanel {
     private Map<Integer, Anthill> anthills = new HashMap<>();
 
     public MapPanel(){
-        canvas = new BufferedImage(800 , 800 , BufferedImage.TYPE_INT_ARGB);
+        canvas = new BufferedImage(400 , 400 , BufferedImage.TYPE_INT_ARGB);
         int color = Color.BLACK.getRGB();
         for (int x = 0; x < canvas.getWidth(); x++) {
             for (int y = 0; y < canvas.getHeight(); y++) {
@@ -77,8 +77,8 @@ public class MapPanel extends JPanel {
     @Override
     public synchronized void paint(Graphics g){
         super.paintComponent(g);
-        int width = 800 / CELL_H;
-        int height = 800 / CELL_V;
+        int width = canvas.getWidth() / CELL_H;
+        int height = canvas.getHeight() / CELL_V;
         for (WorldCell[] cellRow : worldMap )
             for (WorldCell cell : cellRow)
                 cell.paint(canvas, new Dimension(width, height));
