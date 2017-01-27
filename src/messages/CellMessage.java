@@ -1,7 +1,13 @@
 package messages;
 
+import com.google.gson.*;
 import enums.Actions;
 import enums.CellType;
+import javafx.scene.control.Cell;
+
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Vector;
 
 public class CellMessage {
 
@@ -13,13 +19,12 @@ public class CellMessage {
     private int color;
     private float gradientTotalValue;
     private float gradientValue;
-    private Actions upGradient;
-    private Actions downGradient;
-    private Actions upEnemyGradient;
-    private Actions downEnemyGradient;
-    //private float enemyGradient;
-    private Actions downPheromones;
-    private String[] ants;
+    private Float[] adjacentGradient;
+    private Actions[] adjacentGradientActions;
+    private Float[] adjacentEnemyGradient;
+    private Actions[] adjacentEnemyGradientActions;
+    private Float[] adjacentPheromones;
+    private Actions[] adjacentPheromonesActions;
 
     public int getX() {
         return x;
@@ -45,14 +50,6 @@ public class CellMessage {
         this.type = type;
     }
 
-    public Actions getUpGradient() {
-        return upGradient;
-    }
-
-    public void setUpGradient(Actions upGradient) {
-        this.upGradient = upGradient;
-    }
-
     public float getGradientTotalValue() {
         return gradientTotalValue;
     }
@@ -65,46 +62,8 @@ public class CellMessage {
         return gradientValue;
     }
 
-    //public void setEnemyGradient(float gradient) { this.enemyGradient = gradient; }
-
-    /*public float getEnemyGradient() {
-        return enemyGradient;
-    }*/
-
     public void setGradientValue(float gradientValue) {
         this.gradientValue = gradientValue;
-    }
-
-    public Actions getDownGradient() {
-        return downGradient;
-    }
-
-    public void setDownGradient(Actions downGradient) {
-        this.downGradient = downGradient;
-    }
-
-    public Actions getUpEnemyGradient() {
-        return upEnemyGradient;
-    }
-
-    public void setUpEnemyGradient(Actions upGradient) {
-        this.upEnemyGradient = upGradient;
-    }
-
-    public Actions getDownEnemyGradient() {
-        return downEnemyGradient;
-    }
-
-    public void setDownEnemyGradient(Actions downGradient) {
-        this.downEnemyGradient = downGradient;
-    }
-
-    public Actions getDownPheromones() {
-        return downPheromones;
-    }
-
-    public void setDownPheromones(Actions downPheromones) {
-        this.downPheromones = downPheromones;
     }
 
     public int getFood() {
@@ -131,12 +90,51 @@ public class CellMessage {
         this.color = color;
     }
 
-    public String[] getAnts() {
-        return ants;
+    public Float[] getAdjacentGradient() {
+        return adjacentGradient;
     }
 
-    public void setAnts(String[] ants) {
-        this.ants = ants;
+    public void setAdjacentGradient(Float[] adjacentGradient) {
+        this.adjacentGradient = adjacentGradient;
     }
 
+    public Actions[] getAdjacentGradientActions() {
+        return adjacentGradientActions;
+    }
+
+    public void setAdjacentGradientActions(Actions[] adjacentGradientActions) {
+        this.adjacentGradientActions = adjacentGradientActions;
+    }
+
+    public Float[] getAdjacentEnemyGradient() {
+        return adjacentEnemyGradient;
+    }
+
+    public void setAdjacentEnemyGradient(Float[] adjacentEnemyGradient) {
+        this.adjacentEnemyGradient = adjacentEnemyGradient;
+    }
+
+    public Actions[] getAdjacentEnemyGradientActions() {
+        return adjacentEnemyGradientActions;
+    }
+
+    public void setAdjacentEnemyGradientActions(Actions[] adjacentEnemyGradientActions) {
+        this.adjacentEnemyGradientActions = adjacentEnemyGradientActions;
+    }
+
+    public Float[] getAdjacentPheromones() {
+        return adjacentPheromones;
+    }
+
+    public void setAdjacentPheromones(Float[] adjacentPheromones) {
+        this.adjacentPheromones = adjacentPheromones;
+    }
+
+    public Actions[] getAdjacentPheromonesActions() {
+        return adjacentPheromonesActions;
+    }
+
+    public void setAdjacentPheromonesActions(Actions[] adjacentPheromonesActions) {
+        this.adjacentPheromonesActions = adjacentPheromonesActions;
+    }
 }

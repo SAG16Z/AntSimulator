@@ -33,12 +33,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.Vector;
 
 public class Server extends Agent {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    private static final int ANT_CNT = 10;
+    private static final int ANT_CNT = 40;
     private static final int TEAM_CNT = 1;
 
     private Color[] teamCols = {Color.cyan, Color.yellow, Color.magenta, Color.orange};
@@ -271,6 +272,7 @@ public class Server extends Agent {
     private int sendDropFoodReply(AID senderID, AntMessage ant, PerceptionMessage pm) {
         Anthill nest = mapPanel.getAnthill(pm.getColor());
         Point newFoodPosition = nest.addFood(pm.getCurrentFood());
+        mapPanel.getWorldMap()[pm.getCell().getX()][pm.getCell().getY()].addPheromones(pm.getColor());
         pm.setCurrentFood(0);
         if(newFoodPosition != null) {
             mapPanel.getWorldMap()[newFoodPosition.x][newFoodPosition.y].setIsAnthillFood(true);
@@ -408,13 +410,21 @@ public class Server extends Agent {
         cm.setFood(cell.getFood());
         cm.setMaterial(cell.getMaterial());
         cm.setColor(mapPanel.getWorldMap()[x][y].getMaxGradientCol());
-        cm.setGradientTotalValue(mapPanel.getWorldMap()[x][y].getSumGradients());
-        cm.setGradientValue(mapPanel.getWorldMap()[x][y].getGradient(pm.getColor()));
-        cm.setUpGradient(mapPanel.getUpGradient(cell, pm.getColor()));
-        cm.setDownGradient(mapPanel.getDownGradient(cell, pm.getColor()));
-        cm.setUpEnemyGradient(mapPanel.getUpEnemyGradient(cell, pm.getColor()));
-        cm.setDownEnemyGradient(mapPanel.getDownEnemyGradient(cell, pm.getColor()));
-        cm.setDownPheromones(mapPanel.getDownPheromones(cell, pm.getColor()));
+
+        HashMap<Float, Actions> m = mapPanel.getAdjacentGradient(cell, pm.getColor());
+        cm.setAdjacentGradient(m.keySet().toArray(new Float[m.size()]));
+        cm.setAdjacentGradientActions(m.values().toArray(new Actions[m.size()]));
+
+        m = mapPanel.getAdjacentEnemyGradient(cell, pm.getColor());
+        cm.setAdjacentEnemyGradient(m.keySet().toArray(new Float[m.size()]));
+        cm.setAdjacentEnemyGradientActions(m.values().toArray(new Actions[m.size()]));
+
+        m = mapPanel.getAdjacentPheromones(cell, pm.getColor());
+        cm.setAdjacentPheromones(m.keySet().toArray(new Float[m.size()]));
+        cm.setAdjacentPheromonesActions(m.values().toArray(new Actions[m.size()]));
+
+        cm.setGradientTotalValue(mapPanel.getSumGradients(cell));
+        cm.setGradientValue(mapPanel.getGradient(cell, pm.getColor()));
         pm.setCell(cm);
     }
 

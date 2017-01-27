@@ -5,6 +5,7 @@ import enums.Actions;
 import enums.AntRole;
 import jade.lang.acl.ACLMessage;
 import map.Point;
+import messages.CellMessage;
 import messages.PerceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ public class BehaviourWarrior extends Behaviour {
         if (reply == null) {
             return;
         }
+        CellMessage cell = currentPerception.getCell();
 
         if(currentPerception.getEnemiesNearby())
         {
@@ -28,9 +30,9 @@ public class BehaviourWarrior extends Behaviour {
             return;
         }
 
-        if(currentPerception.getCell().getGradientValue() <= 0.5f)
+        if(cell.getGradientValue() <= 0.5f)
         {
-            Actions toNestMove = currentPerception.getCell().getUpGradient();
+            Actions toNestMove = getUpGradient(cell.getAdjacentGradient(), cell.getAdjacentGradientActions());
             if (toNestMove != null) {
                 ant.sendReply(toNestMove, false);
                 return;
@@ -38,10 +40,10 @@ public class BehaviourWarrior extends Behaviour {
         }
 
         LOG.trace("{} Move randomly", ant.getLocalName());
-        getRandomAction();
-        if (dir != null) {
-            LOG.debug("{} moving randomly from {} to {}", new Object[]{ant.getLocalName(), currentPos, dir} );
-            ant.sendReply(dir);
+        Actions random = getRandomAction();
+        if (random != null) {
+            LOG.debug("{} moving randomly from {} to {}", new Object[]{ant.getLocalName(), currentPos, random} );
+            ant.sendReply(random);
             return;
         }
 

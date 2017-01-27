@@ -40,7 +40,7 @@ public class BehaviourThief extends Behaviour {
             }
 
             // search for increasing enemy gradient
-            Actions toNestMove = cell.getUpEnemyGradient();
+            Actions toNestMove = getUpGradient(cell.getAdjacentEnemyGradient(), cell.getAdjacentEnemyGradientActions());
             if (toNestMove != null) {
                 LOG.debug("{} found path to enemy nest from {} to {}", new Object[]{ant.getLocalName(), currentPos, toNestMove});
                 ant.sendReply(toNestMove, false);
@@ -78,7 +78,7 @@ public class BehaviourThief extends Behaviour {
             }
 
             // search for increasing friendly gradient
-            Actions toNestMove = cell.getUpGradient();
+            Actions toNestMove = getUpGradient(cell.getAdjacentGradient(), cell.getAdjacentGradientActions());
             if (toNestMove != null) {
                 LOG.debug("{} found path to friendly nest from {} to {}", new Object[]{ant.getLocalName(), currentPos, toNestMove});
                 ant.sendReply(toNestMove, false);
@@ -98,10 +98,10 @@ public class BehaviourThief extends Behaviour {
 
         // move randomly
         LOG.trace("{} Move randomly", ant.getLocalName());
-        getRandomAction();
-        if (dir != null) {
-            LOG.debug("{} moving randomly from {} to {}", new Object[]{ant.getLocalName(), currentPos, dir} );
-            ant.sendReply(dir);
+        Actions random = getRandomAction();
+        if (random != null) {
+            LOG.debug("{} moving randomly from {} to {}", new Object[]{ant.getLocalName(), currentPos, random} );
+            ant.sendReply(random);
             return;
         }
 

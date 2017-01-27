@@ -12,18 +12,16 @@ import org.omg.CORBA.PUBLIC_MEMBER;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.accessibility.AccessibleRelation;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class MapPanel extends JPanel {
     private BufferedImage canvas;
-    private static final int CELL_H = 100;
-    private static final int CELL_V = 100;
+    private static final int CELL_H = 200;
+    private static final int CELL_V = 200;
     private static final int SPAWN_AREA = 5;
     private WorldCell[][] worldMap = new WorldCell[CELL_H][CELL_V];
     private static float MAX_GRADIENT = 50.0f;
@@ -95,107 +93,50 @@ public class MapPanel extends JPanel {
     public boolean isValidPosition(Point point) {
         return point != null && point.x >= 0 && point.x < CELL_H && point.y >= 0 && point.y < CELL_V;
     }
-    public float getGradient(Point position, int color) {return worldMap[position.x][position.y].getGradient(color);}
+
+    public float getSumGradients(WorldCell cell) { return getSumGradients(new Point(cell.getPosition().x, cell.getPosition().y) ); }
+    public float getSumGradients(Point position) { return worldMap[position.x][position.y].getSumGradients(); }
+
+    public float getGradient(WorldCell cell, int color) { return getGradient(new Point(cell.getPosition().x, cell.getPosition().y), color); }
+    public float getGradient(Point position, int color) { return worldMap[position.x][position.y].getGradient(color);}
+
+    public float getPheromones(WorldCell cell, int color) { return getPheromones(new Point(cell.getPosition().x, cell.getPosition().y), color); }
     public float getPheromones(Point position, int color) {return worldMap[position.x][position.y].getPheromones(color);}
 
-    private Actions getGradient(WorldCell cell, int color, boolean up){
-        float gradient = 0;
-        Actions action = null;
-        if(isValidPosition(cell.getPosition())) {
-            Point adjacent = cell.getPosition().left();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) > 0 && getGradient(adjacent, color) >= gradient) {
-                gradient = getGradient(cell.getPosition().left(), color);
-                action = up ? Actions.ANT_ACTION_LEFT : Actions.ANT_ACTION_RIGHT;
-            }
-            adjacent = cell.getPosition().right();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) > 0 && getGradient(adjacent, color) >= gradient) {
-                gradient = getGradient(cell.getPosition().right(), color);
-                action = up ? Actions.ANT_ACTION_RIGHT : Actions.ANT_ACTION_LEFT;
-            }
-            adjacent = cell.getPosition().down();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) > 0 && getGradient(adjacent, color) >= gradient) {
-                gradient = getGradient(cell.getPosition().down(), color);
-                action = up ? Actions.ANT_ACTION_DOWN : Actions.ANT_ACTION_UP;
-            }
-            adjacent = cell.getPosition().up();
-            if (isValidPosition(adjacent) && getGradient(adjacent, color) > 0 && getGradient(adjacent, color) >= gradient) {
-                action = up ? Actions.ANT_ACTION_UP : Actions.ANT_ACTION_DOWN;
-            }
-        }
-        return action;
+    public HashMap<Float, Actions> getAdjacentGradient(WorldCell cell, int color){
+        HashMap<Float, Actions> result = new HashMap<>();
+        Point p = cell.getPosition();
+        if(isValidPosition(p.left()) && getGradient(p.left(), color) > 0)
+            result.put(getGradient(p.left(), color), Actions.ANT_ACTION_LEFT);
+        if(isValidPosition(p.right()) && getGradient(p.right(), color) > 0)
+            result.put(getGradient(p.right(), color), Actions.ANT_ACTION_RIGHT);
+        if(isValidPosition(p.up()) && getGradient(p.up(), color) > 0)
+            result.put(getGradient(p.up(), color),Actions.ANT_ACTION_UP);
+        if(isValidPosition(p.down()) && getGradient(p.down(), color) > 0)
+            result.put(getGradient(p.down(), color), Actions.ANT_ACTION_DOWN);
+        LOG.debug(result.toString());
+        return result;
     }
 
-    public Actions getUpGradient(WorldCell cell, int color){
-        return getGradient(cell, color, true);
+    public HashMap<Float, Actions> getAdjacentPheromones(WorldCell cell, int color){
+        HashMap<Float, Actions> result = new HashMap<>();
+        Point p = cell.getPosition();
+        if(isValidPosition(p.left()) && getPheromones(p.left(), color) > 0)
+            result.put(getPheromones(p.left(), color), Actions.ANT_ACTION_LEFT);
+        if(isValidPosition(p.right()) && getPheromones(p.right(), color) > 0)
+            result.put(getPheromones(p.right(), color), Actions.ANT_ACTION_RIGHT);
+        if(isValidPosition(p.up()) && getPheromones(p.up(), color) > 0)
+            result.put(getPheromones(p.up(), color), Actions.ANT_ACTION_UP);
+        if(isValidPosition(p.down()) && getPheromones(p.down(), color) > 0)
+            result.put(getPheromones(p.down(), color), Actions.ANT_ACTION_DOWN);
+        return result;
     }
 
-    public Actions getDownGradient(WorldCell cell, int color){
-        return getGradient(cell, color, false);
-    }
-
-    public Actions getUpEnemyGradient(WorldCell cell, int color) {
+    public HashMap<Float, Actions> getAdjacentEnemyGradient(WorldCell cell, int color) {
         int enemyColor = cell.getEnemyGradientColor(color);
         if(enemyColor != 0)
-            return getGradient(cell, enemyColor, true);
-        return null;
-    }
-
-    public Actions getDownEnemyGradient(WorldCell cell, int color) {
-        int enemyColor = cell.getEnemyGradientColor(color);
-        if(enemyColor != 0)
-            return getGradient(cell, enemyColor, true);
-        return null;
-    }
-
-    public Actions getDownPheromones(WorldCell cell, int color){
-        Actions action = null;
-        float maxPheromones = Float.MAX_VALUE;
-        float minPheromones = 0;
-        Map<Float, Actions> map = new HashMap<>();
-        if(isValidPosition(cell.getPosition())) {
-            Point adjacent = cell.getPosition().left();
-            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0) {
-                map.put(getPheromones(adjacent, color), Actions.ANT_ACTION_LEFT);
-            }
-            adjacent = cell.getPosition().right();
-            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0) {
-                map.put(getPheromones(adjacent, color), Actions.ANT_ACTION_RIGHT);
-            }
-            adjacent = cell.getPosition().down();
-            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0) {
-                map.put(getPheromones(adjacent, color), Actions.ANT_ACTION_DOWN);
-            }
-            adjacent = cell.getPosition().up();
-            if (isValidPosition(adjacent) && getPheromones(adjacent, color) > 0) {
-                map.put(getPheromones(adjacent, color), Actions.ANT_ACTION_UP);
-            }
-        }
-        if(map.size() > 0) {
-            if (cell.getType() == CellType.START) {
-                // go max adjacent pheromone gradient
-                for (Float val : map.keySet())
-                    if (val > minPheromones) {
-                        minPheromones = val;
-                        action = map.get(val);
-                    }
-            }
-            else {
-                // go down pheromone gradient
-                if (map.size() == 1) {
-                    // if at the end of trail
-                    getDownGradient(cell, color);
-                } else {
-                    // choose lower value pheromone
-                    for (Float val : map.keySet())
-                        if (val < maxPheromones) {
-                            maxPheromones = val;
-                            action = map.get(val);
-                        }
-                }
-            }
-        }
-        LOG.debug("Server sends downPheromones action to {}", action);
-        return action;
+            return getAdjacentGradient(cell, enemyColor);
+        return new HashMap<>();
     }
 
     public synchronized void putAnt(AID sender, PerceptionMessage pm) {
