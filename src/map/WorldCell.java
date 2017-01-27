@@ -41,10 +41,7 @@ public class WorldCell {
             Graphics g = image.getGraphics();
             g.setColor(Color.BLACK);
             g.fillRect(position.x * w, position.y * h, w, h);
-            if (type == CellType.START || type == CellType.NEST) {
-                g.setColor(new Color(maxGradientColors[0]));
-                g.fillRect(position.x * w, position.y * h, w, h);
-            } else {
+            if ( type == CellType.FREE) {
                 for (int gr : gradients.keySet()) {
                     int alpha = (int) (gradients.get(gr) * 100);
                     Color c = new Color(gr);
@@ -63,11 +60,6 @@ public class WorldCell {
             g.setColor(new Color(0.0f, 0.0f, 1.0f, (float) material / MAX_MATERIAL));
             g.fillRect(position.x * w, position.y * h, w, h);
 
-            if (isAnthillFood) {
-                g.setColor(Color.red);
-                g.fillRect(position.x * w, position.y * h, w, h);
-            }
-
             if (!ants.isEmpty()) {
                 if (ants.get(0).isQueen())
                     g.setColor(QUEEN_COLOR);
@@ -75,6 +67,16 @@ public class WorldCell {
                     g.setColor(new Color(ants.get(0).getColor())); // draw just the first ant color
                 g.fillRect(position.x * w, position.y * h, w, h);
             }
+
+            if (type == CellType.START || type == CellType.NEST) {
+                g.setColor(new Color(maxGradientColors[0]));
+                g.fillRect(position.x * w, position.y * h, w, h);
+            }
+            if (isAnthillFood) {
+                g.setColor(Color.red);
+                g.fillRect(position.x * w, position.y * h, w, h);
+            }
+
             hasChanged = false;
         }
     }
